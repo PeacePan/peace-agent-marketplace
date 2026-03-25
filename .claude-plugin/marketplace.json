@@ -1,0 +1,29 @@
+{
+  "name": "wonderpet-agent-plugins",
+  "owner": { "name": "WonderPetRD" },
+  "metadata": {
+    "description": "WonderPet RD AI 工具包"
+  },
+  "plugins": [
+    {
+      "name": "norwegianforest-engineering-mindset",
+      "source": "./plugins/norwegianforest-engineering-mindset",
+      "description": "NorwegianForest 工程診斷技能集：針對 Sandbox VM lifecycle 機制提供系統性問題診斷與修正方法論，目前包含追蹤冗餘 policy 觸發的五步驟分析法"
+    },
+    {
+      "name": "norwegianforest-knowledge-base",
+      "source": "./plugins/norwegianforest-knowledge-base",
+      "description": "NorwegianForest 知識庫：涵蓋 function 腳本撰寫技術背景（Sandbox VM lifecycle、hook 機制）、調撥單完整業務邏輯，以及 DSV 出貨系統六張資料表的業務知識"
+    },
+    {
+      "name": "ragdoll-knowledge-base",
+      "source": "./plugins/ragdoll-knowledge-base",
+      "description": "Ragdoll 知識庫：結帳流程完整文件與 createStore 狀態管理指南"
+    },
+    {
+      "name": "ragdoll-workflow",
+      "source": "./plugins/ragdoll-workflow",
+      "description": "Ragdoll 開發專用：開發流程、E2E 測試 skill，以及 6 個專職 agent"
+    }
+  ]
+}

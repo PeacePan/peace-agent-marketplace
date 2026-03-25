@@ -1,0 +1,5 @@
+{
+  "name": "norwegianforest-knowledge-base",
+  "description": "NorwegianForest 專案核心業務知識庫。包含三個技能：(1) function-script-context：Sandbox VM lifecycle 設計、hook 觸發時機、ignorePolicy 行為差異、防無限迴圈旗標機制；(2) transferorder-business-logic：調撥單完整欄位定義、各類型差異（WH/WHAT/ST/DN）、狀態機、DSV 整合流程與所有腳本參考；(3) dsv-system-knowledge：DSV 出貨系統六張資料表（dsvorder、dsvorderdetail、dsvshipment、dsvdailytask、dsvinventory、dsvinventoryoperation）的完整業務邏輯與批號分配機制。",
+  "version": "1.0.0"
+}
