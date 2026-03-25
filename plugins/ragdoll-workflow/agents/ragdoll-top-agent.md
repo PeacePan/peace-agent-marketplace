@@ -6,7 +6,6 @@ color: orange
 memory: user
 effort: high
 skills: 
-    - ragdoll-develop-workflow
     - using-superpowers
     - using-git-worktrees
     - brainstorming
@@ -15,6 +14,7 @@ skills:
     - dispatching-parallel-agents
     - verification-before-completion
     - finishing-a-development-branch
+    - ragdoll-develop-workflow
 tools:
     - Bash
     - WebFetch

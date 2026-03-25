@@ -9,13 +9,15 @@ skills:
     - typescript-advanced-types
     - vercel-react-best-practices
     - next-best-practices
-    - ragdoll-checkout-flow
-    - ragdoll-createstore-guide
     - tailwind-css-patterns
     - tailwind-design-system
     - shadcn
     - ui-ux-pro-max
     - web-design-guidelines
+    - ragdoll-checkout-flow
+    - ragdoll-createstore-guide
+    - ragdoll-taishin-one-pay
+    - ragdoll-edenred-voucher
 tools:
     - Write
     - Edit
