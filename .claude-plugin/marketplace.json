@@ -6,6 +6,16 @@
   },
   "plugins": [
     {
+      "name": "maltese-knowledge-base",
+      "source": "./plugins/maltese-knowledge-base",
+      "description": "Maltese POS 知識庫：UICtrllerContext 架構、DialogContentName 型別、dialogStack 生命週期、SaleConsole Dialog 清單，以及 myFuncCompFactory 工廠函式完整說明"
+    },
+    {
+      "name": "maltese-workflow",
+      "source": "./plugins/maltese-workflow",
+      "description": "Maltese 專案開發專用工具包"
+    },
+    {
       "name": "norwegianforest-engineering-mindset",
       "source": "./plugins/norwegianforest-engineering-mindset",
       "description": "NorwegianForest 工程診斷技能集：針對 Sandbox VM lifecycle 機制提供系統性問題診斷與修正方法論，目前包含追蹤冗餘 policy 觸發的五步驟分析法"
@@ -16,6 +26,11 @@
       "description": "NorwegianForest 知識庫：涵蓋 function 腳本撰寫技術背景（Sandbox VM lifecycle、hook 機制）、調撥單完整業務邏輯，以及 DSV 出貨系統六張資料表的業務知識"
     },
     {
+      "name": "norwegianforest-workflow",
+      "source": "./plugins/norwegianforest-workflow",
+      "description": "NorwegianForest 開發流程：包含 JavaCat 表格定義建立與測試"
+    },
+    {
       "name": "ragdoll-knowledge-base",
       "source": "./plugins/ragdoll-knowledge-base",
       "description": "Ragdoll 知識庫：結帳流程完整文件與 createStore 狀態管理指南"
@@ -24,6 +39,11 @@
       "name": "ragdoll-workflow",
       "source": "./plugins/ragdoll-workflow",
       "description": "Ragdoll 開發專用：開發流程、E2E 測試 skill，以及 6 個專職 agent"
+    },
+    {
+      "name": "wonderpet-general",
+      "source": "./plugins/wonderpet-general",
+      "description": "萬達寵物通用 AI 工具包"
     }
   ]
 }
