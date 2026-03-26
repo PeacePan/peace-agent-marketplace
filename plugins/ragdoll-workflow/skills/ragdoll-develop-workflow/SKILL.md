@@ -211,7 +211,7 @@ gh pr edit <PR-number> --add-label "working"
 
 ### Step 9 — 所有 Chunk 完成後進行 Code Review
 
-當所有 Chunk 均完成後，呼叫 `/code-review` 對此 PR 進行審查：
+當所有 Chunk 均完成後，使用 `wonderpet-general:code-review-principles` 對此 PR 進行審查：
 
 - 若出現**嚴重（critical）或高風險（high）程度的錯誤**，必須回報給 `ragdoll-workflow:ragdoll-electron-rd` 與 `ragdoll-workflow:ragdoll-next-rd` 重新實作。
 - 重新實作後再次進行 Code Review，直到沒有嚴重或高風險錯誤為止。
@@ -241,7 +241,7 @@ gh pr edit <PR-number> --remove-label "working" --add-label "done"
 
 ### Step 12 — 發送摘要至 Google Chat
 
-將整個實作結果的摘要，以**條列式、1000 字以內**的訊息，發送至 Google Chat 聊天室。
+將整個實作結果的摘要，以**條列式、1000 字以內**的**繁體中文**訊息，發送至 Google Chat 聊天室。
 
 > ⚠️ **不可使用 `curl` 傳送含中文的訊息**，Windows Git Bash 下 curl 傳遞中文字串會產生亂碼。**必須使用 Python** 發送：
 
