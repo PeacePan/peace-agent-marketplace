@@ -3,8 +3,8 @@
 程式碼位置：
 - Mutable client：`electron/main/database/mutable-client.ts`
 - Readonly client：`electron/main/database/readonly-client.ts`
-- Mutable config：`electron/main/database/drizzle.config.mutable.ts`
-- Readonly config：`electron/main/database/drizzle.config.readonly.ts`
+- Mutable config：`electron/drizzle.config.mutable.ts`（**在 `electron/` 根目錄，不是 runtime 路徑**）
+- Readonly config：`electron/drizzle.config.readonly.ts`
 
 ---
 
@@ -95,18 +95,29 @@ export const posPromotion = sqliteTable('pos_promotion', {
 
 ## Drizzle Kit 配置
 
-兩個 DB 各有獨立的 drizzle-kit 配置檔：
+兩個 DB 各有獨立的 drizzle-kit 配置檔，位於 `electron/`（非 runtime 路徑，純 CLI 工具用）：
 
 ### drizzle.config.mutable.ts
 
 ```typescript
 import { defineConfig } from 'drizzle-kit';
+import { homedir } from 'os';
+import { join } from 'path';
+
+function getDevDbCredentials() {
+    if (process.env.RAGDOLL_TARGET_ENV !== 'development') return void 0;
+    const base = process.platform === 'darwin'
+        ? join(homedir(), 'Library/Application Support/Electron')
+        : join(process.env.APPDATA ?? homedir(), 'Electron');
+    return { url: join(base, 'data/development/offline-mutable.db') };
+}
 
 export default defineConfig({
     dialect: 'sqlite',
-    schema: './electron/main/database/schema/mutable/*.ts',
+    schema: './electron/main/database/schema/mutable/*',
     out: './electron/main/database/migrations/mutable',
     casing: 'snake_case',
+    dbCredentials: getDevDbCredentials(),
 });
 ```
 
@@ -114,18 +125,34 @@ export default defineConfig({
 
 ```typescript
 import { defineConfig } from 'drizzle-kit';
+import { homedir } from 'os';
+import { join } from 'path';
+
+function getDevDbCredentials() {
+    // create:init-db 腳本透過 INIT_DB_URL 傳入自訂路徑
+    if (process.env.INIT_DB_URL) return { url: process.env.INIT_DB_URL };
+    if (process.env.RAGDOLL_TARGET_ENV !== 'development') return void 0;
+    const base = process.platform === 'darwin'
+        ? join(homedir(), 'Library/Application Support/Electron')
+        : join(process.env.APPDATA ?? homedir(), 'Electron');
+    return { url: join(base, 'data/development/offline-readonly.db') };
+}
 
 export default defineConfig({
     dialect: 'sqlite',
-    schema: './electron/main/database/schema/readonly/*.ts',
+    schema: './electron/main/database/schema/readonly/index.ts',
     out: './electron/main/database/migrations/readonly',
     casing: 'snake_case',
+    dbCredentials: getDevDbCredentials(),
 });
 ```
 
 ### 配置要點
 
-- `schema`：使用 glob 指向對應 DB 的 schema 目錄
+- **Config 位置**：`electron/drizzle.config.*.ts`，不包進 Electron bundle，純供 drizzle-kit CLI 使用
+- **`schema`（readonly）**：指向 `index.ts` 而非 `/*` glob。若用 glob，`index.ts`（re-export 全部）與個別檔案同時被掃描，導致 duplicate table name 警告，`db:generate` 無法產生 migration
+- **`dbCredentials`**：只在 `RAGDOLL_TARGET_ENV=development` 時提供（`db:push` 才需要連線）；staging / production 只走 `db:generate + migrate`，不需要 push
+- **`INIT_DB_URL`**：供 `create:init-db` 腳本傳入自訂 DB 路徑（`resources/data/offline-readonly-vX-*.db`），讓 push 直接建表到目標檔案
 - `out`：migration 檔案輸出到各自的 `migrations/` 子目錄
 - `casing`：與 Drizzle client 一致，使用 `snake_case`
 - `dialect`：固定為 `sqlite`

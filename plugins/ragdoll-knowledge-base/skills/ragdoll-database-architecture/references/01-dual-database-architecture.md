@@ -79,9 +79,9 @@ Ragdoll 使用兩個獨立的 SQLite 資料庫檔案，依據**資料來源**和
 [Step 1] initMutableDb()
          ├─ 開啟 offline-mutable.db 連線
          ├─ 設定 PRAGMA (WAL / synchronous=FULL / foreign_keys=ON)
-         ├─ ensureDrizzleMigrationTable() — 舊版 DB 相容
          ├─ 建立 Drizzle instance (schema + relations + casing)
-         └─ migrate() — 執行未完成的 migration
+         └─ [僅 staging/production] ensureDrizzleMigrationTable() + migrate()
+            local dev (IS_LOCAL_DEV=1) 跳過 migrate，schema 已由 db:push 同步
               ↓
 [Step 2] findLatestInitDatabase()
          ├─ 掃描 resources/data/ 目錄
@@ -93,10 +93,19 @@ Ragdoll 使用兩個獨立的 SQLite 資料庫檔案，依據**資料來源**和
 [Step 3] initReadonlyDb()
          ├─ 開啟 offline-readonly.db 連線
          ├─ 設定 PRAGMA (WAL / cache_size=-64000 / temp_store=MEMORY)
-         ├─ ensureDrizzleMigrationTable() — 舊版 DB 相容
          ├─ 建立 Drizzle instance
-         └─ migrate() — 補上 .gz 版本之後的 migration
+         └─ [僅 staging/production] ensureDrizzleMigrationTable() + migrate()
+            local dev (IS_LOCAL_DEV=1) 跳過 migrate，schema 已由 db:push 同步
 ```
+
+### 環境差異
+
+| 環境 | Schema 同步方式 | migrate() |
+|------|----------------|-----------|
+| local dev（`IS_LOCAL_DEV=1`） | `npm run dev` 啟動前自動 `db:push` | **不執行** |
+| staging / production | Electron 啟動時執行 `migrate()` | **執行** |
+
+`db:push` 直接同步當前 schema，不留 migration 歷史；`migrate()` 套用 commit 進來的增量 migration 檔案。
 
 ---
 
