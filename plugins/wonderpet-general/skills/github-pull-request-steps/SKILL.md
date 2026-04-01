@@ -107,8 +107,8 @@ gh pr edit <PR-number> --add-label "working"
 
 當所有工作均完成後，使用 `wonderpet-general:code-review-principles` 對此 PR 進行審查：
 
-- 若出現**嚴重（critical）或高風險（high）程度的錯誤**，必須回報給 `code-review-failure-assignee` 參數指定的對象重新實作。
-- 重新實作後再次進行 Code Review，直到沒有嚴重或高風險錯誤為止。
+- 若出現**嚴重（critical）、高風險（high）、中等（medium）程度的錯誤**，必須回報給 `code-review-failure-assignee` 參數指定的對象重新實作。
+- 重新實作後再次進行 Code Review，直到沒有嚴重、高、中等風險錯誤為止，且評估分數需達 75 分以上。
 
 ---
 
