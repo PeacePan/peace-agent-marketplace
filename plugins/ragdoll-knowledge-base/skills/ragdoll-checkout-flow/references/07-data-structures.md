@@ -23,6 +23,8 @@ interface CheckoutDiscountSaleItem {
 
 type SaleItemType =
   | 'NORMAL'           // 一般購物車商品
+  | 'OPEN_PRICE'       // 時價商品（無固定定價，門市人員手動輸入售價）
+  | 'CHANGE'           // 變價商品（主管授權調整價格）
   | 'FREEBIE_ADDON'    // 加購商品（有售價）
   | 'FREEBIE_GIVE'     // 贈品（price 固定為 0）
   | 'POINT_PLUS_MONEY' // 點加金商品（price = 金額部分）
@@ -168,17 +170,30 @@ interface IssueInvoiceLocalRecord {
 定義於 `next/lib/stores/checkout/items/type.ts`
 
 ```typescript
-interface CheckoutItem {
-  barcode: string         // 商品條碼
-  name: string            // 商品名稱
-  price: number           // 當前售價（會隨會員登入/登出切換）
-  memberPrice: number     // 會員價
-  labelPrice: number      // 定價
-  amount: number          // 數量
-  isAdjustPrice?: boolean // 是否為變價商品
-  adjustReason?: string   // 變價原因
-  authorizer?: string     // 授權主管員編
-  originalPrice?: number  // 變價前的原始售價
+type CheckoutItem = {
+  uuid: string              // 唯一識別碼（React key）
+  saleItemType: 'NORMAL' | 'OPEN_PRICE' | 'CHANGE'  // 商品類型
+  name: string              // 料件編號
+  displayName: string       // 顯示名稱
+  barcode?: string          // 國際條碼
+  price: number             // 當前售價（一般商品隨會員狀態切換，時價/變價固定）
+  memberPrice: number       // 會員價（時價商品 = 輸入的售價）
+  labelPrice: number        // 定價（時價商品 = 輸入的售價）
+  amount: number            // 數量
+  changePriceReason?: string  // 變價原因（僅 CHANGE）
+  authorizer?: string         // 授權主管員編（僅 CHANGE）
+}
+```
+
+### PendingOpenPrice（時價商品暫存）
+
+```typescript
+type PendingOpenPrice = {
+  name: string              // 料件編號
+  displayName: string       // 顯示名稱
+  barcode?: string          // 國際條碼
+  openPriceMin: number      // 開放價格最低
+  openPriceMax: number      // 開放價格最高
 }
 ```
 

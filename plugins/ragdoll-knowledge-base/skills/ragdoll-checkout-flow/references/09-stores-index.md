@@ -52,14 +52,20 @@
 |-------|------|------|
 | `normalItems` | `CheckoutItem[]` | 一般商品列表 |
 | `adjustPriceItems` | `CheckoutItem[]` | 變價商品列表 |
+| `openPriceItems` | `CheckoutItem[]` | 時價商品列表（已確認價格） |
+| `pendingOpenPrice` | `PendingOpenPrice \| null` | 等待定價的時價商品（驅動 OpenPriceDialog） |
 
 | Action | 說明 |
 |--------|------|
-| `scanItem(query)` | 掃碼主入口（優先累加，否則查 API） |
+| `scanItem(query)` | 掃碼主入口（一般商品累加，時價商品設 pendingOpenPrice） |
 | `addItem(item)` | 直接新增商品 |
 | `updateItemAmount(name, amount)` | 更新數量 |
 | `adjustItemPrice(params)` | 變價並分拆至 `adjustPriceItems` |
-| `clearAll()` | 清空購物車 |
+| `addOpenPriceItem(item)` | 新增時價商品（同名同價合併），同時清除 pendingOpenPrice |
+| `removeOpenPriceItem(name, price)` | 依 name + price 移除時價商品 |
+| `clearOpenPriceItems()` | 清空所有時價商品 |
+| `clearPendingOpenPrice()` | 取消定價 Dialog |
+| `clearAll()` | 清空購物車 + pendingOpenPrice |
 
 ---
 
@@ -256,6 +262,7 @@
 | `next/app/checkout/components/checkout-summary.tsx` | 金額彙總顯示 |
 | `next/app/checkout/components/invoice-options.tsx` | 發票選項 |
 | `next/app/checkout/components/price-change-dialog.tsx` | 商品變價對話框 |
+| `next/app/checkout/components/open-price-dialog.tsx` | 時價商品定價對話框 |
 | `next/app/checkout/components/number-keypad.tsx` | 數字鍵盤 Popover |
 | `next/app/checkout/components/addon-gift-dialog/index.tsx` | 加購/贈品/點加金對話框 |
 | `next/app/checkout/components/addon-gift-dialog/barcode-input.tsx` | 對話框內條碼掃描 |

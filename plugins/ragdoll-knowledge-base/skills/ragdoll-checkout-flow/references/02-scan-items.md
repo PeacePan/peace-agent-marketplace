@@ -24,22 +24,42 @@ POS 高速掃碼的關鍵設計。行為規則：
 ```
 scanItem(query) 呼叫後：
 
-1. 檢查 normalItems 中是否已有相同商品
-   ├─ 有 → updateItemAmount(name, currentAmount + 1) → 結束
+1. 檢查 normalItems 中是否已有相同商品（非 OPEN_PRICE 類型）
+   ├─ 有 → 累加數量（amount + 1）→ 結束
    └─ 無 → 繼續
 
-2. 檢查 adjustPriceItems 中是否已有相同商品
-   ├─ 有 → updateItemAmount(name, currentAmount + 1) → 結束
-   └─ 無 → 繼續
+2. fetchItem(query) 從本地 DB 查詢商品資料（先查 name，再查 barCode）
+   ├─ 查無 → throw Error('查無此商品')
+   └─ 查到 → 繼續
 
-3. ragdollAPI.fetchItem(query) 查詢商品資料
+3. 偵測是否為時價商品（openPriceMin != null && openPriceMax != null）
+   ├─ 是 → 設定 pendingOpenPrice（驅動 OpenPriceDialog）→ 結束
+   └─ 否 → 繼續
 
 4. 根據會員狀態選擇價格：
    ├─ member !== null → 使用 memberPrice（會員價）
    └─ member === null → 使用 labelPrice（定價）
 
-5. addItem(item) 加入 normalItems
+5. 建立 CheckoutItem（saleItemType: 'NORMAL'），加入 normalItems
 ```
+
+### 時價商品定價流程
+
+時價商品（如活體動物）沒有固定售價，門市人員需手動輸入。
+
+```
+1. scanItem 偵測到時價商品 → 設定 pendingOpenPrice
+2. OpenPriceDialog 顯示（auto-focus 售價欄位）
+   - 顯示：料件編號/條碼、商品名稱、建議售價區間
+   - 驗證：openPriceMin <= 售價 <= openPriceMax
+3. 確認 → 組裝 CheckoutItem（saleItemType: 'OPEN_PRICE'）
+   - memberPrice = labelPrice = 輸入的售價（無固定定價）
+4. addOpenPriceItem → 加入 openPriceItems（同名同價合併，不同價獨立）
+5. pendingOpenPrice 清除，Dialog 關閉
+```
+
+**為什麼每次掃描都要重新定價？**
+同一種時價商品的每一件售價可能不同（例如同品種的魚大小不同），因此不像一般商品可以自動累加數量。
 
 ### 會員價即時同步機制（Store Subscription）
 
@@ -47,7 +67,7 @@ scanItem(query) 呼叫後：
 - 會員**登入**→ 遍歷整個購物車，所有商品價格切換為 `memberPrice`
 - 會員**登出**→ 遍歷整個購物車，所有商品價格切換為 `labelPrice`
 
-這確保購物車即時反映當前的price狀態，無需重新掃描。
+注意：此 subscription **僅處理 `normalItems`**，`openPriceItems` 和 `adjustPriceItems` 不受影響（時價由人工決定，變價已授權固定）。
 
 ---
 
@@ -100,6 +120,7 @@ adjustItemPrice({ itemName, newPrice, amount, reason, authorizer })
 |----------|--------|---------|
 | 一般商品 | 白色 | — |
 | 變價商品 | 琥珀色（amber） | 顯示授權人名稱 |
+| 時價商品 | 白色 | 僅提供移除操作（無數量調整） |
 
 **`CartItemPromotion`**（內嵌於 `cart-item-default.tsx`）：
 - 在商品行下方展示「可能適用」的促銷活動提示清單
@@ -115,6 +136,8 @@ adjustItemPrice({ itemName, newPrice, amount, reason, authorizer })
 |------|------|------|
 | `normalItems` | `CheckoutItem[]` | 一般正常銷售的商品列表 |
 | `adjustPriceItems` | `CheckoutItem[]` | 經授權手動變價的商品列表 |
+| `openPriceItems` | `CheckoutItem[]` | 時價商品列表（已確認價格） |
+| `pendingOpenPrice` | `PendingOpenPrice \| null` | 等待定價的時價商品（驅動 OpenPriceDialog） |
 
 ### Actions
 
@@ -124,9 +147,14 @@ adjustItemPrice({ itemName, newPrice, amount, reason, authorizer })
 | `addItem(item)` | 直接新增商品，同品項累加數量 |
 | `updateItemAmount(name, amount)` | 更新指定商品數量 |
 | `adjustItemPrice(params)` | 變價並分拆至 `adjustPriceItems` |
-| `clearAll()` | 清空整個購物車（結帳完成後呼叫） |
+| `addOpenPriceItem(item)` | 新增時價商品（同名同價合併，不同價獨立），同時清除 pendingOpenPrice |
+| `removeOpenPriceItem(name, price)` | 依 name + price 移除時價商品 |
+| `clearOpenPriceItems()` | 清空所有時價商品 |
+| `clearPendingOpenPrice()` | 取消定價 Dialog |
+| `clearAll()` | 清空整個購物車 + pendingOpenPrice（結帳完成後呼叫） |
 
 ### 合併策略
 
 - **`normalItems`**：同名稱商品合併為一筆（累加 `amount`）
 - **`adjustPriceItems`**：同名稱**且同變價金額**才合併；不同變價金額的分開顯示（因為原因/授權人可能不同）
+- **`openPriceItems`**：同名稱**且同售價**才合併；不同售價的分開顯示（每次定價可能不同）
