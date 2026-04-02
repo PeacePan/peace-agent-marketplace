@@ -156,7 +156,7 @@ cd .. && npx husky install
 
 1. QA subagent 回報測試失敗的詳細錯誤訊息與失敗原因。
 2. 將錯誤資訊轉交給對應的 RD subagent 進行修正。
-3. RD subagent 修正完成後，再次交由 QA subagent 驗證。
+3. RD subagent 修正完成後，**直接重發 QA subagent 驗證，不需重走 Step 4 的發派流程。**
 4. **重複上述步驟，直到 QA 測試全部通過為止。**
 
 **QA 全部通過後，才能進入下一步的 Git Commit。**
@@ -184,6 +184,12 @@ Commit 完成後，**必須**發派 `ragdoll-knowledge-base:ragdoll-knowledge-ma
 - 對應的 Spec / Plan 段落（方便 Knowledge Manager 理解意圖）
 
 > Knowledge Manager 會在背景執行，不會阻擋下一個 Task 的開發。待它完成後，變更的知識庫文件會一併包含在後續的 commit 中。
+
+---
+
+### Step 6.5 — 等待 Knowledge Manager 完成（最後一個 Task 時）
+
+當所有 Task 已完成，進入 Step 7 之前，**MUST** 確認所有背景執行的 Knowledge Manager agent 皆已完成。若有尚未完成的，等待其完成並將產出的知識庫文件 commit 後，再進入 Step 7。
 
 ---
 
