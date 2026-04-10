@@ -1,5 +1,5 @@
 ---
-name: github-pull-request-steps
+name: github-create-pr-steps
 description: 通用 GitHub Pull Request 標準流程。涵蓋建立 Branch、開 PR、標上 Label、Code Review、E2E 測試驗收、更新 Label 到發送 Google Chat 摘要的完整步驟。適用於任何專案的 PR 管理流程。
 ---
 
@@ -64,30 +64,7 @@ cd .. && npx husky install
    gh pr create --title "<PR 標題>" --body "<PR 描述>"
    ```
    PR 標題依照 `pr-title-format` 參數格式填入。
-   PR 描述請按照以下範本：
-
-   ```markdown
-   ## 摘要
-   <!--
-   簡述如何實作此功能，如果是錯誤修正，請說明錯誤的發生原因
-   -->
-   {描述在此處}
-
-   ## 卡片連結
-   {ticket-url-prefix}/{ticket}
-
-   ## 提醒事項
-   ### 📋 開發者提醒事項
-   - 確認 PR 標題描述正確
-   - 確認 Merge base
-   - 確認 Label 標示正確
-   ### 📋 審查者提醒事項
-   - 確認 merge target
-   - 確認 Label 更改完成
-   - 確認代碼註解是否完善
-   - 列出建議修正項目
-   - 列出建議效能優化項目
-   ```
+   PR 描述請使用 `wonderpet-general:github-update-pr-summary` 技能產生。
 
 4. 執行 `git push` 將 commit 推送至遠端。
 
