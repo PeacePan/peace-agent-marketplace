@@ -1,5 +1,5 @@
 {
   "name": "norwegianforest-knowledge-base",
-  "description": "NorwegianForest 專案核心業務知識庫。包含三個技能：(1) function-script-context：Sandbox VM lifecycle 設計、hook 觸發時機、ignorePolicy 行為差異、防無限迴圈旗標機制；(2) transferorder-business-logic：調撥單完整欄位定義、各類型差異（WH/WHAT/ST/DN）、狀態機、DSV 整合流程與所有腳本參考；(3) dsv-system-knowledge：DSV 出貨系統六張資料表（dsvorder、dsvorderdetail、dsvshipment、dsvdailytask、dsvinventory、dsvinventoryoperation）的完整業務邏輯與批號分配機制。",
+  "description": "NorwegianForest 專案核心業務知識庫。包含多個技能：(1) function-script-context：Sandbox VM lifecycle 設計、hook 觸發時機、ignorePolicy 行為差異、防無限迴圈旗標機制；(2) transferorder-business-logic：調撥單完整欄位定義、各類型差異（WH/WHAT/ST/DN）、狀態機、DSV 整合流程與所有腳本參考；(3) dsv-system-knowledge：DSV 出貨系統六張資料表（dsvorder、dsvorderdetail、dsvshipment、dsvdailytask、dsvinventory、dsvinventoryoperation）的完整業務邏輯與批號分配機制；(4) norwegianforest-testing-architecture：Mocha/Chai/NYC 測試框架配置、QueryProcessor Mock 策略、QueryEventEmitter 事件追蹤、六種腳本類型（Policy/BatchPolicy/Approval/Hook/Function/Unit）的標準測試模板；(5) javacat-table-architecture：JavaCat 表格定義系統架構、FieldSchema/LineSchema/EnumSchema、腳本掛勾模式。",
   "version": "1.0.0"
 }
