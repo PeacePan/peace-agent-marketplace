@@ -19,7 +19,6 @@ tools:
     - MCP(atlassian)
     - MCP(github)
 permissionMode: bypassPermissions
-background: true
 ---
 
 # Peace Clone — 通用型開發者代理
