@@ -40,7 +40,10 @@ flowchart TD
     P -- 是 --> G
     P -- 否 --> Q[所有 Task 完成]
 
-    Q --> T{需求包含 UI 改動？}
+    Q --> Q6b[["[6b] 並行發派<br>ragdoll-knowledge-manager<br>ragdoll-validator"]]
+    Q6b --> Q65{"[6.5] Validator<br>驗證通過？"}
+    Q65 -- 否 --> G
+    Q65 -- 是 --> T{需求包含 UI 改動？}
 
     T -- 是 --> V[["Agent ragdoll-e2e-qa<br>進行 E2E 測試"]]
     V --> W{E2E 測試通過？}
@@ -114,16 +117,16 @@ cd .. && npx husky install
 
 ### Step 2.5 — 回歸本工作流程（HARD GATE）
 
-**`writing-plans` 完成後，MUST 回到本工作流程的 Step 3。**
+**`superpowers:writing-plans` 完成後，MUST 回到本工作流程的 Step 3。**
 
-**MUST NOT** 繼續 superpowers 的預設流程（即不要呼叫 `subagent-driven-development` 或 `executing-plans`）。
+**MUST NOT** 繼續 superpowers 的預設流程（即不要呼叫 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans`）。
 本工作流程自帶 Task 切分與 Subagent 發派機制，不需要 superpowers 的執行層技能。
 
 ---
 
 ### Step 3 — 切分 Task
 
-- 根據 `writing-plans` 產出的 Plan，切分為多個 **Task**（子任務），每個 Task 對應可獨立提交的工作單元。
+- 根據 `superpowers:writing-plans` 產出的 Plan，切分為多個 **Task**（子任務），每個 Task 對應可獨立提交的工作單元。
 - 確認 Plan 的每個 Task 均能對應到 Spec 的功能需求，確保沒有遺漏。
 
 ---
@@ -174,22 +177,31 @@ git add <相關檔案>
 git commit -m "<清楚描述此 Task 的變更>"
 ```
 
-#### 6b. 呼叫 Knowledge Manager 更新知識庫
+#### 6b. 並行發派 Knowledge Manager 與 Validator
 
-Commit 完成後，**必須**發派 `ragdoll-knowledge-base:ragdoll-knowledge-manager` agent，將此 Task 的變更情境傳入，讓它自動更新受影響的專案知識庫文件。
+Commit 完成後，**同時並行發派**以下兩個 agent（不需等待彼此完成）：
+
+**`ragdoll-knowledge-base:ragdoll-knowledge-manager`**：將此 Task 的變更情境傳入，讓它自動更新受影響的專案知識庫文件。
 
 發派時需提供的情境資訊：
 - 此 Task 的變更摘要（做了什麼、改了哪些模組）
 - 變更涉及的檔案清單（可從 git diff 取得）
 - 對應的 Spec / Plan 段落（方便 Knowledge Manager 理解意圖）
 
-> Knowledge Manager 會在背景執行，不會阻擋下一個 Task 的開發。待它完成後，變更的知識庫文件會一併包含在後續的 commit 中。
+**`ragdoll-workflow:ragdoll-validator`**：傳入 Github PR 位址與 Jira Ticket 位址，讓它驗證代碼變更是否對齊需求描述。
+
+> 兩個 agent 皆在背景執行，不會阻擋下一個 Task 的開發。Validator 的結果將在 Step 6.5 統一確認。
 
 ---
 
-### Step 6.5 — 等待 Knowledge Manager 完成（最後一個 Task 時）
+### Step 6.5 — 等待 Knowledge Manager 與 Validator 完成（最後一個 Task 時）
 
-當所有 Task 已完成，進入 Step 7 之前，**MUST** 確認所有背景執行的 Knowledge Manager agent 皆已完成。若有尚未完成的，等待其完成並將產出的知識庫文件 commit 後，再進入 Step 7。
+當所有 Task 已完成，進入 Step 7 之前，**MUST** 確認所有背景執行的 agent 皆已完成：
+
+1. **Knowledge Manager**：若有尚未完成的，等待其完成並將產出的知識庫文件 commit 後繼續。
+2. **Validator**：等待 `ragdoll-workflow:ragdoll-validator` 完成驗證。
+   - **驗證通過**：繼續進入 Step 7。
+   - **驗證失敗**：將不對齊的項目轉交給對應的 RD subagent 修正（**回到 Step 4**），修正完成後重新走完 Step 5 → Step 6a → Step 6b → Step 6.5 的循環，直到 Validator 驗證通過為止。
 
 ---
 
@@ -216,6 +228,7 @@ Commit 完成後，**必須**發派 `ragdoll-knowledge-base:ragdoll-knowledge-ma
 | `ragdoll-workflow:ragdoll-e2e-qa` | E2E 測試 | Playwright、結帳流程測試 |
 | `ragdoll-workflow:ragdoll-electron-qa` | Electron 測試 | Electron 層功能驗證 |
 | `ragdoll-workflow:ragdoll-next-qa` | Next.js 測試 | Next.js 層功能驗證 |
+| `ragdoll-workflow:ragdoll-validator` | 需求驗證 | 比對 PR 代碼變更與 Jira Ticket 驗收標準 |
 
 ---
 
