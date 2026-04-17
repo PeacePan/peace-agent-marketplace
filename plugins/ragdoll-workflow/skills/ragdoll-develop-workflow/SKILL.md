@@ -14,7 +14,10 @@ flowchart TD
     B --> B2["superpowers:writing-plans<br>擬定 Plan"]
     A1 -- 是 --> B2
     B2 --> B3["HARD GATE：回歸本流程 Step 3"]
-    B3 --> E["切分 Task<br>確認 Plan 與 Spec 相符"]
+    B3 --> CM[["ragdoll-knowledge-base:ragdoll-challenge-me<br>評估 Spec 與 Plan 可行性"]]
+    CM --> CMR{"評估通過？"}
+    CMR -- 否 --> B2
+    CMR -- 是 --> E["切分 Task<br>確認 Plan 與 Spec 相符"]
     E --> F{Plan 與 Spec 相符？}
     F -- 否 --> E
     F -- 是 --> G[["發派 Task 任務<br>ragdoll-electron-rd<br>ragdoll-next-rd"]]
@@ -121,6 +124,20 @@ cd .. && npx husky install
 
 **MUST NOT** 繼續 superpowers 的預設流程（即不要呼叫 `superpowers:subagent-driven-development` 或 `superpowers:executing-plans`）。
 本工作流程自帶 Task 切分與 Subagent 發派機制，不需要 superpowers 的執行層技能。
+
+---
+
+### Step 2.8 — 交由 Challenge Me 評估（HARD GATE）
+
+**MUST** 在進入 Step 3 之前，將 Spec 與 Plan 交給 `ragdoll-knowledge-base:ragdoll-challenge-me` agent 進行可行性考核評估。
+
+發派時需提供：
+- 完整的需求 Spec（功能描述、驗收條件）
+- `superpowers:writing-plans` 產出的 Plan 內容
+
+**評估結果處理：**
+- **評估通過**：進入 Step 3 切分 Task。
+- **評估不通過**：Challenge Me 會指出不合理或有風險的設計，**MUST 回到 Step 2 重新擬定 Plan**，納入反饋修正後再次提交評估，直到評估通過為止。
 
 ---
 
