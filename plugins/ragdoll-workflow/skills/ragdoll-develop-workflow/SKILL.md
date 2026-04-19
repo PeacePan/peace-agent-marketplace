@@ -145,7 +145,7 @@ cd .. && npx husky install
 
 - 根據 `superpowers:writing-plans` 產出的 Plan，切分為多個 **Task**（子任務），每個 Task 對應可獨立提交的工作單元。
 - 確認 Plan 的每個 Task 均能對應到 Spec 的功能需求，確保沒有遺漏。
-
+- **MUST** 開始此步驟後到 Step 7 完成前都不再需要與使用者互動
 ---
 
 ### Step 4 — 發派 Task 任務（HARD GATE）
