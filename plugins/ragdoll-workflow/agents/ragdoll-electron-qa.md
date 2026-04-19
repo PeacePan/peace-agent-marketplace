@@ -11,6 +11,8 @@ description: >
 model: sonnet
 color: blue
 memory: local
+skills:
+    - ragdoll-project-knowledge
 permissionMode: bypassPermissions
 background: true
 ---

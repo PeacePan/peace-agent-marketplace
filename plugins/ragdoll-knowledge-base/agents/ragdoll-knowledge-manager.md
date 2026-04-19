@@ -8,14 +8,14 @@ model: sonnet
 color: green
 memory: local
 skills:
-    - ragdoll-knowledge-base:ragdoll-project-knowledge
-    - ragdoll-knowledge-base:ragdoll-database-architecture
+    - ragdoll-project-knowledge
     - ragdoll-knowledge-base:ragdoll-checkout-flow
     - ragdoll-knowledge-base:ragdoll-createstore-guide
+    - ragdoll-knowledge-base:ragdoll-database-architecture
+    - ragdoll-knowledge-base:ragdoll-edenred-voucher
     - ragdoll-knowledge-base:ragdoll-electron-ipc-storage
     - ragdoll-knowledge-base:ragdoll-printable-coupon
     - ragdoll-knowledge-base:ragdoll-taishin-one-pay
-    - ragdoll-knowledge-base:ragdoll-edenred-voucher
 tools:
     - Read
     - Write

@@ -13,6 +13,7 @@ color: blue
 memory: local
 skills:
     - vitest
+    - ragdoll-project-knowledge
     - ragdoll-knowledge-base:ragdoll-createstore-guide
 permissionMode: bypassPermissions
 background: true

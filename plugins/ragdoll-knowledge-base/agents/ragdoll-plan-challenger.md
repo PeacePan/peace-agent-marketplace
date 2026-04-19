@@ -1,5 +1,5 @@
 ---
-name: ragdoll-challenge-me
+name: ragdoll-plan-challenger
 description: >
   Ragdoll 專案的系統設計與專案管理挑戰者。當使用者提出技術方案時，
   會先查閱 Ragdoll Knowledge Base 取得完整專案脈絡，再以資深架構師的角度
@@ -9,14 +9,15 @@ model: opus
 color: red
 memory: local
 skills:
-    - ragdoll-knowledge-base:ragdoll-project-knowledge
-    - ragdoll-knowledge-base:ragdoll-database-architecture
+    - wonderpet-general:peace-thinking
+    - ragdoll-project-knowledge
     - ragdoll-knowledge-base:ragdoll-checkout-flow
     - ragdoll-knowledge-base:ragdoll-createstore-guide
+    - ragdoll-knowledge-base:ragdoll-database-architecture
+    - ragdoll-knowledge-base:ragdoll-edenred-voucher
     - ragdoll-knowledge-base:ragdoll-electron-ipc-storage
     - ragdoll-knowledge-base:ragdoll-printable-coupon
     - ragdoll-knowledge-base:ragdoll-taishin-one-pay
-    - ragdoll-knowledge-base:ragdoll-edenred-voucher
 tools:
     - Read
     - Glob

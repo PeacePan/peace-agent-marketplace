@@ -7,6 +7,7 @@ memory: local
 skills:
     - e2e-testing-patterns
     - playwright-best-practices
+    - ragdoll-project-knowledge
     - ragdoll-knowledge-base:ragdoll-checkout-flow
 permissionMode: bypassPermissions
 background: true
@@ -98,16 +99,51 @@ npm run test:e2e -- --skip-build --headless
 
 ### Step 4：準備測試資料
 
-**可用工廠函數（`test/e2e/fixtures/test-data/`）：**
-```typescript
-import { createTestItem, TEST_ITEM_A, TEST_ITEM_B } from '../fixtures/test-data/items';
-import { createTestMember, TEST_MEMBER } from '../fixtures/test-data/members';
-import { createTestSaler, TEST_SALER } from '../fixtures/test-data/saler';
-import { createTestCoupon } from '../fixtures/test-data/coupons';
-import { createTestFreebie, createTestPointPromotion } from '../fixtures/test-data/promotions';
+**SQLite 本地資料（商品、員工、加購/贈品、小白單）**
+
+已在 `test/e2e/global-setup.ts` 的 `seedReadonlyTemplate()` 寫入 readonly DB template，Electron launch 時自動複製。直接使用條碼/工號即可，無需在 spec 中指定：
+
+| 資料 | 值 |
+|------|-----|
+| 員工工號 | `001`（TEST_SALER_ID）、`1001`（TEST_SALER_NUMERIC_ID） |
+| 商品條碼 | `4711111111110`（A）、`4712222222220`（B）、`4713333333330`（C） |
+| 加購活動 | `ADDON_ACT_001`（加購價 199） |
+| 贈品活動 | `GIFT_ACT_001`（贈品 1 件） |
+| 小白單活動 | `TEST_PRINTABLE_COUPON_001` |
+
+**GraphQL 遠端資料（會員、優惠券、點數等）**
+
+建立與 spec 同名的 `.fixtures.json`（僅含非空資料的 table）：
+
+```
+test/e2e/
+├── fixtures/
+│   └── graphql-defaults.json        ← 所有 table 的空陣列預設值
+├── 2-promotions/
+│   ├── member-coupon.spec.ts
+│   └── member-coupon.fixtures.json  ← 此 spec 需要的 GraphQL 資料
 ```
 
-只建立**當前測試場景真正需要的最小資料集**。
+JSON 規則：
+- key = 遠端 table name（`posmember`、`pointaccount` 等，不用 camelCase）
+- 格式：`[{ "body": {...}, "lines": {...} }]`（對齊 `SafeRecord2`）
+- 不需要的 table 不必寫（由 `graphql-defaults.json` 補空陣列）
+
+Spec 使用方式：
+```typescript
+import defaults from '../fixtures/graphql-defaults.json';
+import fixture from './member-coupon.fixtures.json';
+import type { E2EMockData } from '../fixtures';
+
+const launch = useElectronApp({ ...defaults, ...fixture } as E2EMockData);
+
+// 無 GraphQL 資料需求時：
+const launch = useElectronApp({ ...defaults } as E2EMockData);
+```
+
+**Agent 不再需要碰的檔案：**
+- `mock-ipc.ts` 的 `mockLocalDb()`（已移除）
+- `test-data/items.ts`、`test-data/saler.ts`（資料已由 global-setup 管理）
 
 ### Step 5：撰寫測試檔案
 

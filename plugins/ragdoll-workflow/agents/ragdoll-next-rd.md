@@ -14,6 +14,7 @@ skills:
     - shadcn
     - ui-ux-pro-max
     - web-design-guidelines
+    - ragdoll-project-knowledge
     - ragdoll-knowledge-base:ragdoll-checkout-flow
     - ragdoll-knowledge-base:ragdoll-createstore-guide
     - ragdoll-knowledge-base:ragdoll-taishin-one-pay
