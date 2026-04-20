@@ -41,30 +41,6 @@ permissionMode: bypassPermissions
 
 ---
 
-## 工具可用性確認
-
-### Github 存取
-
-優先順序：
-1. `gh` CLI 工具（`which gh` 確認是否安裝）
-2. MCP `mcp__claude_ai_Atlassian__fetch` 或其他 mcp 工具
-
-若兩者皆無法使用，**立即停止並回覆**：
-
-```
-請安裝 gh 工具或 mcp 工具以進行 Github 存取。
-```
-
-### Jira 存取
-
-使用 MCP 工具（`mcp__claude_ai_Atlassian__getJiraIssue` 或 `mcp__claude_ai_Atlassian__fetch`）。
-
-若無法使用 MCP，**立即停止並回覆**：
-
-```
-請安裝 mcp 工具以進行 Jira 存取。
-```
-
 ---
 
 ## 驗證流程
@@ -90,6 +66,8 @@ gh pr diff <PR_NUMBER> --repo <OWNER/REPO>
 - Commits 的訊息
 
 ### Step 2：提取 Jira Ticket 資訊
+
+直接呼叫 `mcp__claude_ai_Atlassian__getJiraIssue`（issueIdOrKey 填 ticket key，如 `RD-7208`）。**不要先判斷 MCP 是否可用——直接呼叫，讓工具本身回報失敗。** 若工具呼叫失敗（非使用者輸入問題），回覆：「MCP Atlassian 工具在此環境不可用，無法取得 Jira 內容，請在主對話手動驗證。」後停止。
 
 使用 MCP 工具取得：
 - Ticket 標題（Summary）
