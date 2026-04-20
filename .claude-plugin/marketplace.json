@@ -36,8 +36,8 @@
       "description": "Ragdoll 知識庫：結帳流程完整文件與 createStore 狀態管理指南"
     },
     {
-      "name": "ragdoll-workflow",
-      "source": "./plugins/ragdoll-workflow",
+      "name": "ragdoll-workspace",
+      "source": "./plugins/ragdoll-workspace",
       "description": "Ragdoll 開發專用：開發流程、E2E 測試 skill，以及 6 個專職 agent"
     },
     {

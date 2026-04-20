@@ -8,37 +8,21 @@
 
 ---
 
-`/plugin install maltese-knowledge-base@wonderpet-agent-plugins`
+`/plugin install maltese-workspace@wonderpet-agent-plugins`
 
-`/plugin install maltese-workflow@wonderpet-agent-plugins`
+`/plugin install norwegianforest-workspace@wonderpet-agent-plugins`
 
-`/plugin install norwegianforest-engineering-mindset@wonderpet-agent-plugins`
-
-`/plugin install norwegianforest-knowledge-base@wonderpet-agent-plugins`
-
-`/plugin install norwegianforest-workflow@wonderpet-agent-plugins`
-
-`/plugin install ragdoll-knowledge-base@wonderpet-agent-plugins`
-
-`/plugin install ragdoll-workflow@wonderpet-agent-plugins`
+`/plugin install ragdoll-workspace@wonderpet-agent-plugins`
 
 `/plugin install wonderpet-general@wonderpet-agent-plugins`
 
 ## 更新 Plugin
 
-`/plugin update maltese-knowledge-base@wonderpet-agent-plugins`
+`/plugin update maltese-workspace@wonderpet-agent-plugins`
 
-`/plugin update maltese-workflow@wonderpet-agent-plugins`
+`/plugin update norwegianforest-workspace@wonderpet-agent-plugins`
 
-`/plugin update norwegianforest-engineering-mindset@wonderpet-agent-plugins`
-
-`/plugin update norwegianforest-knowledge-base@wonderpet-agent-plugins`
-
-`/plugin update norwegianforest-workflow@wonderpet-agent-plugins`
-
-`/plugin update ragdoll-knowledge-base@wonderpet-agent-plugins`
-
-`/plugin update ragdoll-workflow@wonderpet-agent-plugins`
+`/plugin update ragdoll-workspace@wonderpet-agent-plugins`
 
 `/plugin update wonderpet-general@wonderpet-agent-plugins`
 

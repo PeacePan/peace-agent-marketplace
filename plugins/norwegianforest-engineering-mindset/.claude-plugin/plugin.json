@@ -1,5 +1,0 @@
-{
-  "name": "norwegianforest-engineering-mindset",
-  "description": "NorwegianForest 專案工程診斷技能集：針對 NorwegianForest 的 Sandbox VM lifecycle 機制（policy、batchPolicy、batchBeforeUpdate 等 hook）提供系統性的問題診斷與修正方法論。目前包含「追蹤冗餘 policy 觸發」技能，適用於操作逾時、重複觸發、效能異常等問題的根因分析。",
-  "version": "1.0.0"
-}
