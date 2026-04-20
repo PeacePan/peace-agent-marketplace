@@ -228,9 +228,9 @@ Commit 完成後，**同時並行發派**以下兩個 agent（不需等待彼此
 
 ---
 
-### Step 7 — 執行 `wonderpet-general:github-pull-request-steps`
+### Step 7 — 執行 `wonderpet-general:github-create-pr-steps`
 
-呼叫 **`wonderpet-general:github-pull-request-steps`** 技能，並帶入以下 Ragdoll 專案參數：
+呼叫 **`wonderpet-general:github-create-pr-steps`** 技能，並帶入以下 Ragdoll 專案參數：
 
 | 參數 | Ragdoll 專案的值 |
 |---|---|
