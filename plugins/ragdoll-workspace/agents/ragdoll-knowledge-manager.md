@@ -8,13 +8,6 @@ model: sonnet
 color: green
 skills:
     - ragdoll-project-knowledge
-    - ragdoll-workspace:ragdoll-checkout-flow
-    - ragdoll-workspace:ragdoll-createstore-guide
-    - ragdoll-workspace:ragdoll-database-architecture
-    - ragdoll-workspace:ragdoll-edenred-voucher
-    - ragdoll-workspace:ragdoll-electron-ipc-storage
-    - ragdoll-workspace:ragdoll-printable-coupon
-    - ragdoll-workspace:ragdoll-taishin-one-pay
 tools:
     - Read
     - Write
@@ -68,8 +61,6 @@ background: true
 |-------|---------|
 | `ragdoll-database-architecture` | 雙 SQLite DB、Drizzle ORM、Schema、Migration、Operations、WHERE Builder |
 | `ragdoll-checkout-flow` | 結帳流程（掃描→折扣→付款→發票）、10 個折扣計算器、Store 架構 |
-| `ragdoll-createstore-guide` | createStore 狀態管理、Actions、TrackedPromise、跨 Store 通信 |
-| `ragdoll-electron-ipc-storage` | IPC 架構、ragdollAPI、electron-store、硬體裝置 IPC |
 | `ragdoll-printable-coupon` | 小白單列印、資格篩選、同步機制 |
 | `ragdoll-taishin-one-pay` | 台新 ONE 碼支付流程 |
 | `ragdoll-edenred-voucher` | 宜睿禮券核銷流程 |
@@ -95,14 +86,11 @@ electron/main/database/       → references/electron/database.md、ragdoll-data
 electron/main/database/schema/ → references/electron/drizzle-guide.md
 electron/main/jobs/sync-data/  → references/electron/sync.md
 electron/main/jobs/            → references/electron/background-jobs.md
-electron/main/devices/         → ragdoll-electron-ipc-storage skill
 next/src/**/checkout/          → references/modules/checkout.md、ragdoll-checkout-flow skill
 next/src/**/payment/           → references/modules/payment.md
 next/src/**/order/             → references/modules/order.md
 next/src/**/reprint/           → references/modules/reprint.md
 next/src/**/point-promotion/   → references/modules/point-plus-cash.md
-next/src/**/stores/            → ragdoll-createstore-guide skill
-shared/                        → ragdoll-electron-ipc-storage skill
 ```
 
 ### Step 3 — 比對差異

@@ -13,7 +13,6 @@ color: blue
 skills:
     - vitest
     - ragdoll-project-knowledge
-    - ragdoll-workspace:ragdoll-createstore-guide
 permissionMode: bypassPermissions
 background: true
 ---

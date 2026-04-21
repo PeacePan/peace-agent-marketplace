@@ -14,11 +14,6 @@ skills:
     - ui-ux-pro-max
     - web-design-guidelines
     - ragdoll-project-knowledge
-    - ragdoll-workspace:ragdoll-checkout-flow
-    - ragdoll-workspace:ragdoll-createstore-guide
-    - ragdoll-workspace:ragdoll-taishin-one-pay
-    - ragdoll-workspace:ragdoll-edenred-voucher
-    - ragdoll-workspace:ragdoll-printable-coupon
 tools:
     - Write
     - Edit
@@ -192,8 +187,6 @@ export const useSomeStore = createStore<SomeState, SomeActions, SomeInjected, So
     },
 });
 ```
-
-> 詳細 Store 系統使用規範請參考 SKILL `ragdoll-createstore-guide`。
 
 ---
 

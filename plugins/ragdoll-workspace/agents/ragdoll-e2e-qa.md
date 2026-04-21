@@ -7,7 +7,6 @@ skills:
     - e2e-testing-patterns
     - playwright-best-practices
     - ragdoll-project-knowledge
-    - ragdoll-workspace:ragdoll-checkout-flow
 permissionMode: bypassPermissions
 background: true
 ---

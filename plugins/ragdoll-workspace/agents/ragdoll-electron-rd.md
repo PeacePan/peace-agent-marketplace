@@ -6,8 +6,6 @@ color: yellow
 skills:
     - typescript-advanced-types
     - ragdoll-project-knowledge
-    - ragdoll-workspace:ragdoll-database-architecture
-    - ragdoll-workspace:ragdoll-electron-ipc-storage
 tools:
     - Write
     - Edit

@@ -43,10 +43,12 @@ flowchart TD
     P -- 是 --> G
     P -- 否 --> Q[所有 Task 完成]
 
-    Q --> Q6b[["[6b] 並行發派<br>ragdoll-knowledge-manager<br>ragdoll-validator"]]
-    Q6b --> Q65{"[6.5] Validator<br>驗證通過？"}
+    Q --> Q6b["[6b] 發派 ragdoll-knowledge-manager<br>至背景執行"]
+    Q6b --> Q6bv[["[6b] 前景執行<br>ragdoll-validator"]]
+    Q6bv --> Q65{"[6b] Validator<br>驗證通過？"}
     Q65 -- 否 --> G
-    Q65 -- 是 --> T{需求包含 UI 改動？}
+    Q65 -- 是 --> Q65km["[6.5] 等待 Knowledge Manager 完成<br>並 commit 知識庫文件"]
+    Q65km --> T{需求包含 UI 改動？}
 
     T -- 是 --> V[["Agent ragdoll-e2e-qa<br>進行 E2E 測試"]]
     V --> W{E2E 測試通過？}
@@ -200,31 +202,34 @@ git add <相關檔案>
 git commit -m "<清楚描述此 Task 的變更>"
 ```
 
-#### 6b. 並行發派 Knowledge Manager 與 Validator
+#### 6b. 發派 Knowledge Manager（背景）與執行 Validator（前景）
 
-Commit 完成後，**同時並行發派**以下兩個 agent（不需等待彼此完成）：
+Commit 完成後，依序執行以下兩個動作：
 
-**`ragdoll-workspace:ragdoll-knowledge-manager`**：將此 Task 的變更情境傳入，讓它自動更新受影響的專案知識庫文件。
+**① 背景發派 `ragdoll-workspace:ragdoll-knowledge-manager`**：將此 Task 的變更情境傳入，讓它在背景自動更新受影響的專案知識庫文件，**不需等待其完成即可繼續**。
 
 發派時需提供的情境資訊：
 - 此 Task 的變更摘要（做了什麼、改了哪些模組）
 - 變更涉及的檔案清單（可從 git diff 取得）
 - 對應的 Spec / Plan 段落（方便 Knowledge Manager 理解意圖）
 
-**`ragdoll-workspace:ragdoll-validator`**：傳入 Github PR 位址與 Jira Ticket 位址，讓它驗證代碼變更是否對齊需求描述。
+**② 前景執行 `ragdoll-workspace:ragdoll-validator`**：傳入 Github PR 位址與 Jira Ticket 位址，**同步等待**其驗證代碼變更是否對齊需求描述。
 
-> 兩個 agent 皆在背景執行，不會阻擋下一個 Task 的開發。Validator 的結果將在 Step 6.5 統一確認。
+- **驗證通過**：繼續進入 Step 6.5 等待 Knowledge Manager。
+- **驗證失敗**：將不對齊的項目轉交給對應的 RD subagent 修正（**回到 Step 4**），修正完成後重新走完 Step 5 → Step 6a → Step 6b 的循環，直到 Validator 驗證通過為止。
+
+> `ragdoll-workspace:ragdoll-validator` 使用 Jira MCP，**必須在前景同步執行**，不可放入背景。
 
 ---
 
-### Step 6.5 — 等待 Knowledge Manager 與 Validator 完成（最後一個 Task 時）
+### Step 6.5 — 等待 Knowledge Manager 完成（最後一個 Task 時）
 
-當所有 Task 已完成，進入 Step 7 之前，**MUST** 確認所有背景執行的 agent 皆已完成：
+當所有 Task 已完成且 Validator 驗證通過後，進入 Step 7 之前，**MUST** 確認背景執行的 Knowledge Manager 已完成：
 
-1. **Knowledge Manager**：若有尚未完成的，等待其完成並將產出的知識庫文件 commit 後繼續。
-2. **Validator**：等待 `ragdoll-workspace:ragdoll-validator` 完成驗證。
-   - **驗證通過**：繼續進入 Step 7。
-   - **驗證失敗**：將不對齊的項目轉交給對應的 RD subagent 修正（**回到 Step 4**），修正完成後重新走完 Step 5 → Step 6a → Step 6b → Step 6.5 的循環，直到 Validator 驗證通過為止。
+- **Knowledge Manager 已完成**：將產出的知識庫文件 commit 後，繼續進入 Step 7。
+- **Knowledge Manager 尚未完成**：等待其完成後，再將知識庫文件 commit，才進入 Step 7。
+
+> Validator 已在 Step 6b 前景同步執行完畢，此步驟無需再次確認。
 
 ---
 

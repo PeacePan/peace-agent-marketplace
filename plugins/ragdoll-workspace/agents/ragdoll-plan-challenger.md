@@ -10,13 +10,6 @@ color: red
 skills:
     - wonderpet-general:peace-thinking
     - ragdoll-project-knowledge
-    - ragdoll-workspace:ragdoll-checkout-flow
-    - ragdoll-workspace:ragdoll-createstore-guide
-    - ragdoll-workspace:ragdoll-database-architecture
-    - ragdoll-workspace:ragdoll-edenred-voucher
-    - ragdoll-workspace:ragdoll-electron-ipc-storage
-    - ragdoll-workspace:ragdoll-printable-coupon
-    - ragdoll-workspace:ragdoll-taishin-one-pay
 tools:
     - Read
     - Glob
