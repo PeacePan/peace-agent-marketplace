@@ -43,7 +43,7 @@ cd .. && npx husky install
 
 ## 流程概覽
 
-![Ragdoll 開發工作流程](diagrams/workflow.png)
+[![Ragdoll 開發工作流程](diagrams/workflow.png)](diagrams/workflow.mmd)
 
 ```
 [DEFINE]         需求 → Brainstorming（可選）→ Plan + 三層 Test Cases → plan-challenger
