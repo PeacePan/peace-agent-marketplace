@@ -1,0 +1,84 @@
+---
+config:
+  theme: base
+  themeVariables:
+    primaryColor: "#4a90d9"
+    primaryTextColor: "#ffffff"
+    primaryBorderColor: "#2c5f8a"
+    lineColor: "#555555"
+    fontSize: "14px"
+---
+flowchart TD
+    subgraph DEFINE ["📋 DEFINE — 需求定義"]
+        A([開始]) --> A1["詢問：Brainstorming 或直接寫 Plan？"]
+        A1 -- Brainstorming --> B["superpowers:brainstorming"]
+        B --> B2["superpowers:writing-plans"]
+        A1 -- 直接寫 Plan --> B2
+        B2 --> B25["定義三層 Test Cases\nUnit / Integration / E2E"]
+        B25 --> B3[["HARD GATE\nragdoll-plan-challenger\n審查 Plan + Test Cases"]]
+        B3 --> CMR{"審查通過？"}
+    end
+
+    subgraph PLAN_STAGE ["📐 PLAN — 任務規劃"]
+        E["切分 Task\n各附 Agent / 修改範圍\nUnit+Integration Tests / 並行標注"]
+        E --> F{"每個 Task\n有 test cases？"}
+    end
+
+    subgraph BV ["🔨 BUILD ↔ VERIFY — × N Tasks"]
+        G1{"第一個 Task？"}
+        G1 -- 是 --> GIT["建立 Branch + PR\nlabel: working"]
+        G1 -- 否 --> RD
+        GIT --> RD
+        RD[["發派 RD Subagent\nragdoll-electron-rd / ragdoll-next-rd\n（可並行多實例）"]]
+        RD --> QA[["QA 驗收\nragdoll-electron-qa / ragdoll-next-qa\nUnit + Integration Tests"]]
+        QA --> QAR{"QA 通過？"}
+        QAR -- 否 --> RD
+        QAR -- 是 --> CMT["git commit + push"]
+        CMT --> VAL[["ragdoll-validator\n確認 PR 對齊 Jira"]]
+        VAL --> VALR{"驗證通過？"}
+        VALR -- 否 --> RD
+        VALR -- 是 --> NEXTT{"還有 Task？"}
+        NEXTT -- 是 --> RD
+    end
+
+    subgraph REVIEW_STAGE ["🔍 REVIEW — 審查"]
+        CR[["code-review-principles\n五維：正確性 / 可讀性 / 架構 / 安全 / 效能"]]
+        CR --> CRR{"高風險問題？"}
+        CRR -- 否 --> E2E{"有 UI 改動？"}
+        E2E -- 是 --> E2EQA[["ragdoll-e2e-qa\nE2E Test Cases"]]
+        E2EQA --> E2ER{"E2E 通過？"}
+    end
+
+    subgraph SHIP_STAGE ["🚀 SHIP — 交付"]
+        KM[["ragdoll-knowledge-manager\n整體文件歸檔"]]
+        KM --> PR2[["wonderpet-general:github-create-pr-steps"]]
+        PR2 --> PRS[["wonderpet-general:github-update-pr-summary\n更新 PR 描述"]]
+        PRS --> DONE["label: working → done"]
+        DONE --> CHAT["Google Chat 摘要\n【Ragdoll 開發摘要】"]
+        CHAT --> END([完成])
+    end
+
+    CMR -- 否 --> B2
+    CMR -- 是 --> E
+    F -- 否 --> E
+    F -- 是 --> G1
+    NEXTT -- 否 --> CR
+    CRR -- 是 --> RD
+    E2E -- 否 --> KM
+    E2ER -- 否 --> RD
+    E2ER -- 是 --> KM
+
+    classDef defineStyle fill:#4a90d9,color:#fff,stroke:#2c5f8a
+    classDef planStyle fill:#7b68ee,color:#fff,stroke:#5a4dc0
+    classDef buildStyle fill:#27ae60,color:#fff,stroke:#1a7a40
+    classDef reviewStyle fill:#e67e22,color:#fff,stroke:#b06010
+    classDef shipStyle fill:#e74c3c,color:#fff,stroke:#b03020
+    classDef gateStyle fill:#f39c12,color:#fff,stroke:#c07a00
+    classDef decisionStyle fill:#fafafa,color:#333,stroke:#aaa
+
+    class A,A1,B,B2,B25 defineStyle
+    class B3 gateStyle
+    class E planStyle
+    class G1,GIT,RD,QA,CMT,VAL gateStyle
+    class CR,E2EQA reviewStyle
+    class KM,PR2,PRS,DONE,CHAT,END shipStyle
