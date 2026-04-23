@@ -48,8 +48,8 @@ cd .. && npx husky install
 ```
 [DEFINE]         需求 → Brainstorming（可選）→ Plan + 三層 Test Cases → plan-challenger
 [PLAN]           Task 切分（含並行標注）+ HARD GATE
-[BUILD ↔ VERIFY] RD → QA（unit+integration）→ commit → validator  × N Tasks
-[REVIEW]         Code Review（五維）→ E2E QA
+[BUILD ↔ VERIFY] RD → QA（unit+integration）→ commit  × N Tasks
+[REVIEW]         Code Review（五維）→ Validator（整體對齊 Jira）→ E2E QA
 [SHIP]           Knowledge Manager → PR 完善 → PR 描述更新 → label done → Chat
 ```
 
@@ -193,7 +193,7 @@ gh pr edit --add-label "working"
 
 **QA 全部通過後才可進入 Step 7。**
 
-### Step 7 — Commit + Validator
+### Step 7 — Commit
 
 ```bash
 git add <相關檔案>
@@ -201,10 +201,9 @@ git commit -m "[Ragdoll] {清楚描述此 Task 的變更}"
 git push
 ```
 
-前景執行 `ragdoll-workspace:ragdoll-validator`（傳入 PR 位址 + Jira Ticket 位址）：
+Commit + push 完成後 → 繼續下一個 Task（回 Step 5）或進入 [REVIEW]。
 
-- **通過** → 繼續下一個 Task（回 Step 5）或進入 [REVIEW]
-- **不通過** → 轉交 RD 修正，修正後重走 Step 6 → Step 7
+> Jira 對齊驗證已移至 [REVIEW] 階段（Step 9）整體執行，不再逐 Task 進行。原因：Jira ticket 的驗收條件通常由 PM 以使用者場景描述，逐 Task 片段比對不易；等所有 Task 完成後再由 `ragdoll-validator` 對齊整體實作，才符合 PM 撰寫驗收條件的粒度。
 
 ---
 
@@ -228,20 +227,34 @@ git push
 |---|---|
 | 高風險（資料遺失、安全漏洞、production 崩潰） | **MUST** 回對應 Task 的 [BUILD ↔ VERIFY] 修正，修正後重回 Step 8 |
 | 中風險 | 記錄於 PR comment，由使用者決定是否修正 |
-| 低風險 | 列入改善建議，不阻擋進入 [SHIP] |
+| 低風險 | 列入改善建議，不阻擋進入 Step 9 |
 
-### Step 9 — E2E QA
+### Step 9 — Validator（整體對齊 Jira）
+
+Code Review 通過後（或中/低風險記錄完畢），前景執行 `ragdoll-workspace:ragdoll-validator`，傳入 PR 位址 + Jira Ticket 位址，對「完整實作」進行 Jira 驗收條件對齊檢查。
+
+此步驟放在整體實作完成後執行，原因：
+- Jira ticket 的驗收條件多由 PM 以使用者場景撰寫，不對應單一 Task 的檔案變更
+- 等所有 Task 完成、Code Review 修正落地後，才能看到最終對齊狀態
+- 避免逐 Task 驗證時因片段實作無法判讀而重複誤判
+
+處理方式：
+
+- **通過** → 進入 Step 10
+- **不通過** → 依缺漏對應回原 Task 的 [BUILD ↔ VERIFY] 修正（若涉及多個 Task，逐一轉交對應 RD），修正後重走 Step 8 → Step 9
+
+### Step 10 — E2E QA
 
 發派 `ragdoll-workspace:ragdoll-e2e-qa`，執行 [DEFINE] 階段定義的 E2E test cases。
 
 - **通過** → 進入 [SHIP]
-- **失敗** → 定位失敗的 Task，轉交對應 RD 修正，修正後重走 [BUILD ↔ VERIFY] 該 Task，再回 Step 9
+- **失敗** → 定位失敗的 Task，轉交對應 RD 修正，修正後重走 [BUILD ↔ VERIFY] 該 Task，再回 Step 10
 
 ---
 
 ## [SHIP] 交付
 
-### Step 10 — Knowledge Manager（整體文件歸檔）
+### Step 11 — Knowledge Manager（整體文件歸檔）
 
 前景等待 `ragdoll-workspace:ragdoll-knowledge-manager` 完成整體知識庫更新。
 
@@ -258,7 +271,7 @@ git commit -m "[Ragdoll] docs: 更新知識庫文件"
 git push
 ```
 
-### Step 11 — PR 完善
+### Step 12 — PR 完善
 
 呼叫 `wonderpet-general:github-create-pr-steps`，帶入 Ragdoll 專案參數：
 
@@ -270,7 +283,7 @@ git push
 | Code Review 失敗回報對象 | `ragdoll-workspace:ragdoll-electron-rd`、`ragdoll-workspace:ragdoll-next-rd` |
 | Google Chat 摘要標題 | `【Ragdoll 開發摘要】` |
 
-### Step 12 — 更新 PR 描述
+### Step 13 — 更新 PR 描述
 
 呼叫 `wonderpet-general:github-update-pr-summary`：
 
@@ -278,7 +291,7 @@ git push
 2. 從分支名稱解析 ticket 編號
 3. 填入實作摘要後更新 PR body
 
-### Step 13 — 完成通知
+### Step 14 — 完成通知
 
 ```bash
 gh pr edit --remove-label "working" --add-label "done"
