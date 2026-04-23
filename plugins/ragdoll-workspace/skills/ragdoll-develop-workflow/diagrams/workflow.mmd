@@ -34,17 +34,17 @@ flowchart TD
         QA --> QAR{"QA 通過？"}
         QAR -- 否 --> RD
         QAR -- 是 --> CMT["git commit + push"]
-        CMT --> VAL[["ragdoll-validator\n確認 PR 對齊 Jira"]]
-        VAL --> VALR{"驗證通過？"}
-        VALR -- 否 --> RD
-        VALR -- 是 --> NEXTT{"還有 Task？"}
+        CMT --> NEXTT{"還有 Task？"}
         NEXTT -- 是 --> RD
     end
 
     subgraph REVIEW_STAGE ["🔍 REVIEW — 審查"]
         CR[["code-review-principles\n五維：正確性 / 可讀性 / 架構 / 安全 / 效能"]]
         CR --> CRR{"高風險問題？"}
-        CRR -- 否 --> E2EQA[["ragdoll-e2e-qa\nE2E Test Cases"]]
+        CRR -- 否 --> VAL[["ragdoll-validator\n整體對齊 Jira 驗收條件"]]
+        VAL --> VALR{"驗證通過？"}
+        VALR -- 否 --> RD
+        VALR -- 是 --> E2EQA[["ragdoll-e2e-qa\nE2E Test Cases"]]
         E2EQA --> E2ER{"E2E 通過？"}
     end
 
@@ -77,6 +77,6 @@ flowchart TD
     class A,A1,B,B2,B25 defineStyle
     class B3 gateStyle
     class E planStyle
-    class G1,GIT,RD,QA,CMT,VAL gateStyle
-    class CR,E2EQA,E2ER reviewStyle
+    class G1,GIT,RD,QA,CMT gateStyle
+    class CR,VAL,E2EQA,E2ER reviewStyle
     class KM,PR2,PRS,DONE,CHAT,END shipStyle
