@@ -44,8 +44,7 @@ flowchart TD
     subgraph REVIEW_STAGE ["🔍 REVIEW — 審查"]
         CR[["code-review-principles\n五維：正確性 / 可讀性 / 架構 / 安全 / 效能"]]
         CR --> CRR{"高風險問題？"}
-        CRR -- 否 --> E2E{"有 UI 改動？"}
-        E2E -- 是 --> E2EQA[["ragdoll-e2e-qa\nE2E Test Cases"]]
+        CRR -- 否 --> E2EQA[["ragdoll-e2e-qa\nE2E Test Cases"]]
         E2EQA --> E2ER{"E2E 通過？"}
     end
 
@@ -64,7 +63,6 @@ flowchart TD
     F -- 是 --> G1
     NEXTT -- 否 --> CR
     CRR -- 是 --> RD
-    E2E -- 否 --> KM
     E2ER -- 否 --> RD
     E2ER -- 是 --> KM
 
@@ -80,5 +78,5 @@ flowchart TD
     class B3 gateStyle
     class E planStyle
     class G1,GIT,RD,QA,CMT,VAL gateStyle
-    class CR,E2EQA reviewStyle
+    class CR,E2EQA,E2ER reviewStyle
     class KM,PR2,PRS,DONE,CHAT,END shipStyle

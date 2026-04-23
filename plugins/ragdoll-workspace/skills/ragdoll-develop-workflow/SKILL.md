@@ -49,7 +49,7 @@ cd .. && npx husky install
 [DEFINE]         需求 → Brainstorming（可選）→ Plan + 三層 Test Cases → plan-challenger
 [PLAN]           Task 切分（含並行標注）+ HARD GATE
 [BUILD ↔ VERIFY] RD → QA（unit+integration）→ commit → validator  × N Tasks
-[REVIEW]         Code Review（五維）→ E2E QA（UI 改動時）
+[REVIEW]         Code Review（五維）→ E2E QA
 [SHIP]           Knowledge Manager → PR 完善 → PR 描述更新 → label done → Chat
 ```
 
@@ -230,14 +230,12 @@ git push
 | 中風險 | 記錄於 PR comment，由使用者決定是否修正 |
 | 低風險 | 列入改善建議，不阻擋進入 [SHIP] |
 
-### Step 9 — E2E QA（有 UI 改動時）
+### Step 9 — E2E QA
 
 發派 `ragdoll-workspace:ragdoll-e2e-qa`，執行 [DEFINE] 階段定義的 E2E test cases。
 
 - **通過** → 進入 [SHIP]
 - **失敗** → 定位失敗的 Task，轉交對應 RD 修正，修正後重走 [BUILD ↔ VERIFY] 該 Task，再回 Step 9
-
-若需求**不含 UI 改動** → 跳過此步，直接進入 [SHIP]。
 
 ---
 
