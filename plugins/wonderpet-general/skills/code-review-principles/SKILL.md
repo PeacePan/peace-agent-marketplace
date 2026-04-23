@@ -1,6 +1,6 @@
 ---
 name: code-review-principles
-description: PR Code Review 原則與檢查清單。當需要審查 Pull Request、進行程式碼審查、或評估大型重構的品質與風險時使用。涵蓋正確性（資料完整性、Breaking Change、測試覆蓋）、可讀性、架構、安全性、效能、型別安全、第三方依賴等面向，對應 gigaai 五維審查標準。
+description: PR Code Review 原則與檢查清單。當需要審查 Pull Request、進行程式碼審查、或評估大型重構的品質與風險時使用。涵蓋正確性（資料完整性、Breaking Change、測試覆蓋）、可讀性、架構、安全性、效能、型別安全、第三方依賴等面向。
 ---
 
 # Code Review 原則
