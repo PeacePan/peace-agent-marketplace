@@ -80,9 +80,9 @@ cd .. && npx husky install
 ### Task 1：{描述}
 - 負責層：Electron / Next.js / 兩者
 - Unit Tests：
-  - [ ] {函式/元件名稱}：{驗證什麼}
+  - [ ] {函式/元件名稱}：Given {前置狀態} / When {觸發操作} / Then {預期業務結果}
 - Integration Tests：
-  - [ ] {跨哪些模組}：{驗證什麼互動}
+  - [ ] {跨哪些模組}：Given {前置狀態} / When {觸發操作} / Then {預期業務結果}
 
 ### Task 2：...
 
@@ -90,6 +90,14 @@ cd .. && npx husky install
 - [ ] {完整使用者流程場景 1}
 - [ ] {完整使用者流程場景 2}
 ```
+
+**Test Case 品質 HARD GATE**
+
+每條 Unit / Integration test case **MUST** 能回答：
+
+> 「若移除這條測試，哪個需求的變化會無法被偵測到？」
+
+回答不出來的 test case 不得寫入 Task。
 
 三層分工原則：
 
@@ -191,6 +199,16 @@ gh pr edit --add-label "working"
 3. 直接重發 QA subagent 驗證（**不需重走 Step 5**）
 4. 重複直到全部通過
 
+**測試品質 HARD GATE**
+
+QA agent 依照 `ragdoll-workspace:ragdoll-test-quality` 規範，發現以下任一情況即為**不通過**，必須打回 RD 修正（視同 QA 失敗，重走上方 QA 失敗處理流程）：
+
+| 不通過條件 | 判斷方式 |
+|---|---|
+| Mock-then-query | 測試使用 mock 資料且 assertion 只驗證同一份 mock 資料的查詢結果 |
+| 缺少業務行為說明 | 測試無法對應 Given/When/Then 的 Then 結果 |
+| 零業務保護價值 | 移除該測試後，沒有任何需求的回歸無法被偵測 |
+
 **QA 全部通過後才可進入 Step 7。**
 
 ### Step 7 — Commit
@@ -262,6 +280,15 @@ Code Review 通過後（或中/低風險記錄完畢），前景執行 `ragdoll-
 - 所有 Task 的變更摘要
 - 完整修改檔案清單（`git diff main...HEAD --name-only`）
 - 完整 Spec / Plan 內容
+- **ADR 指示**：若本次實作涉及架構層面的決策（IPC 溝通方式選擇、狀態管理策略、資料庫 schema 設計等），**MUST** 同步產出一份輕量 ADR 寫入知識庫。ADR 格式：
+  ```
+  ## ADR-{編號}：{決策標題}
+  **日期：** YYYY-MM-DD / **狀態：** 已採用
+  ### 決策：{做了什麼決定}
+  ### 原因：{考量了哪些替代方案，為何選此方案}
+  ### 影響：{對未來開發的影響}
+  ```
+  無架構決策時不需產出 ADR。
 
 完成後 commit：
 
