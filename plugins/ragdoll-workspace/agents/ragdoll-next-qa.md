@@ -13,6 +13,7 @@ color: blue
 skills:
     - vitest
     - ragdoll-project-knowledge
+    - ragdoll-test-quality
 permissionMode: bypassPermissions
 background: true
 ---
@@ -32,6 +33,8 @@ background: true
    - **原始碼的問題**（實作邏輯有 bug、函式行為不符預期等）→ **不修改測試**，將錯誤細節回報給 `ragdoll-next-rd` 處理
 4. 若由你修復：修改測試檔案後再次執行 `npm run test:next` 確認全數通過
 5. 若回報 RD：提供失敗測試名稱、實際輸出 vs 預期輸出、推斷的原始碼問題位置
+
+執行任何測試撰寫前，**MUST** 先載入 `ragdoll-workspace:ragdoll-test-quality` Skill，所有測試的品質判斷依照該 Skill 的反模式清單、Given/When/Then 格式與自我檢核問題執行。不符合品質標準的測試**MUST NOT** commit，須打回 RD 重寫。
 
 ---
 
