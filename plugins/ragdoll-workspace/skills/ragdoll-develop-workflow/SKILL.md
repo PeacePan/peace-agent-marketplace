@@ -1,6 +1,5 @@
 ---
 name: ragdoll-develop-workflow
-version: 2.1.0
 description: 定義 Ragdoll 專案的六階段開發工作流程（Define → Plan → Build/Verify → Review → Ship），確保從需求定義到交付的每個階段都有對應的 agent、三層測試策略與品質把關。
 ---
 
