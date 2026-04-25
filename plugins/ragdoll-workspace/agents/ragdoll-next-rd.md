@@ -74,19 +74,29 @@ const { actions, runningActions } = useSomeStore();
 <Button onClick={() => actions.someAction(value)}>確認</Button>
 ```
 
-若一個 handler 依序呼叫多個 store action，以**第一個 action** 的 `runningActions` 控制 UI：
+若一個 handler 依序呼叫**多個不同 store** 的 action，`runningActions` 只能追蹤單一 store，無法橫跨整個流程，此時 MUST 在元件層自行定義 `useState` boolean：
 
 ```tsx
+const [isProcessing, setIsProcessing] = useState(false);
+
 const handleSubmit = async () => {
-    await actions.firstAction(value);   // 最耗時的步驟
-    await actions.secondAction();
-    await actions.thirdAction();
+    if (isProcessing) return;           // 防止重複觸發
+    setIsProcessing(true);
+    try {
+        await storeA.actions.doSomething();
+        await storeB.actions.doOther();
+        await storeC.actions.finalize();
+    } finally {
+        setIsProcessing(false);
+    }
 };
 
-<Button disabled={runningActions.firstAction} onClick={handleSubmit}>
-    {runningActions.firstAction ? <Loader2 className="w-4 h-4 animate-spin" /> : '送出'}
+<Button disabled={isProcessing} onClick={handleSubmit}>
+    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : '送出'}
 </Button>
 ```
+
+> 參考：`next/app/checkout/page.tsx` 的 `handleSubtotalClick` 與 `isSubtotalProcessing`。
 
 ---
 
