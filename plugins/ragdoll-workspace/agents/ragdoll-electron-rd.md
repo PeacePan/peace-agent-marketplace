@@ -43,16 +43,20 @@ background: true
 
 ---
 
-## ipcMain.handle 裡的同步處理會阻塞主程序
+## 不可在主程序阻塞事件迴圈
 
-`ipcMain.handle` 的 callback 執行在 Electron 主程序的事件迴圈上。任何在 callback 裡執行的**同步耗時操作**（複雜 DB 查詢、大量運算、同步 I/O 等）都會直接阻塞整個主程序，直到操作完成。主程序阻塞期間，Next.js 渲染層的所有 IPC 請求都會暫停回應，使用者會感覺 UI 卡頓。這是 Electron 的已知行為（[electron/electron#3363](https://github.com/electron/electron/issues/3363)）。
+Electron 主程序是所有視窗、IPC 與 GPU 通訊的控制中心，OS 的滑鼠點擊也必須經過主程序才能到達視窗。任何在主程序執行的**同步耗時操作**（大量運算、複雜 DB 查詢、同步 I/O 等）都會凍結整個應用，Next.js 渲染層的所有 IPC 請求在此期間都不會得到回應。這是 Electron 官方文件明確警告的問題，見 [Performance — Blocking the main process](https://www.electronjs.org/docs/latest/tutorial/performance#3-blocking-the-main-process)。
 
-**規則：在 `ipcMain.handle` 裡新增執行時間不可預期或已知耗時的邏輯時，MUST 改用 Worker thread 執行。**
+官方建議的三條規則，**MUST** 遵守：
+
+1. **CPU 密集工作用 Worker thread**：執行時間不可預期或已知耗時的邏輯，移至 Node.js worker thread 執行
+2. **避免同步 IPC**：不使用 `ipcRenderer.sendSync()` 與 `@electron/remote`，一律走 `ipcMain.handle` + `invoke`
+3. **I/O 用非同步版本**：`fs.promises.readdir()` 而非 `fs.readdirSync()`，以此類推
 
 ```typescript
 // ❌ 錯誤：耗時的同步邏輯直接在 handle 裡跑，主程序被阻塞
 ipcMain.handle('some-channel', (_, params) => {
-    return doHeavyWork(params); // 同步耗時 → 主程序卡住
+    return doHeavyWork(params); // 同步耗時 → 主程序卡住，UI 凍結
 });
 
 // ✅ 正確：耗時邏輯移至 Worker thread
@@ -60,8 +64,6 @@ ipcMain.handle('some-channel', async (_, params) => {
     return await runInWorker(params); // Worker 跑完才 resolve，主程序不阻塞
 });
 ```
-
-快速、固定時間複雜度的操作（如 key 查詢、讀取設定值）可維持現狀。需要判斷的情境：執行時間隨資料量增長、涉及迴圈或遞迴、或呼叫外部同步 API。
 
 ---
 
