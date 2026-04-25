@@ -47,7 +47,42 @@ background: true
 
 ## 專案知識
 
-**MUST** 在開始任何實作前，先呼叫 `ragdoll-project-knowledge` skill 載入最新的專案架構、技術規範與實作慣例。
+**MUST** 在開始任何實作前，先呼叫以下兩個 skill：
+
+1. `ragdoll-project-knowledge` — 載入最新的專案架構、技術規範與實作慣例
+2. `vercel-react-best-practices` — 載入 React 實作規範，包含 `useEffect` 使用限制等核心規則
+
+---
+
+## React Compiler — `'use no memo'` 規則
+
+Ragdoll 已啟用 React Compiler。Compiler 會自動 memoize 函數，但對於**元件外定義、含迭代邏輯、且從 event handler 呼叫**的 helper function，memoization 會導致執行結果不正確，**MUST** 在函數 body 第一行加 `'use no memo'`。
+
+```tsx
+// ✅ 正確：元件外的 helper，有 .filter() / .map() 等迭代，從 event handler 呼叫
+function buildSnapshotItems(snapshot: PosSaleRecord | null) {
+    'use no memo';
+    return (snapshot?.lines?.items ?? [])
+        .filter((i) => i.type === 'NORMAL')
+        .map((i) => ({ itemName: i.itemName ?? '', quantity: i.amount ?? 1 }));
+}
+
+// ✅ 正確：型別守衛函數，元件外定義，從 event handler 間接呼叫
+function isValidItem(item: SomeItem): item is ValidItem {
+    'use no memo';
+    return item.category === 'addon' || item.category === 'gift';
+}
+
+// ❌ 不需要：元件內的 inline function 或純運算（無迭代）
+const total = items.reduce((sum, i) => sum + i.price, 0); // Compiler 可安全處理
+```
+
+判斷是否需要加的三個條件，**三者同時成立**才需要：
+1. 定義在元件外（file scope 或模組 helper）
+2. 函數內有迭代邏輯（`.map()` / `.filter()` / `.reduce()` / `for` loop）
+3. 從 event handler 呼叫（`onClick`、`onKeyDown`、store action 等）
+
+> 參考：`next/app/checkout/page.tsx:43`、`next/app/checkout/components/addon-gift-dialog/index.tsx:833`
 
 ---
 
