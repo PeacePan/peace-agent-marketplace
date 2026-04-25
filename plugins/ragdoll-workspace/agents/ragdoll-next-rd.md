@@ -51,6 +51,45 @@ background: true
 
 ---
 
+## Async 按鈕防呆模式
+
+`createStore` 回傳的 `runningActions` 是一個 `Record<ActionName, boolean>`，當 action 執行中時自動為 `true`。**所有觸發 async store action 的按鈕與輸入框，MUST 使用 `runningActions` 實作 disabled 與 loading 效果**，不需要額外的 local state。
+
+```tsx
+const { actions, runningActions } = useSomeStore();
+
+// ✅ 正確：button disabled + spinner，input disabled 防止再次輸入
+<Input
+    disabled={runningActions.someAction}
+    onKeyDown={(e) => e.key === 'Enter' && actions.someAction(value)}
+/>
+<Button
+    disabled={runningActions.someAction}
+    onClick={() => actions.someAction(value)}
+>
+    {runningActions.someAction ? <Loader2 className="w-4 h-4 animate-spin" /> : '確認'}
+</Button>
+
+// ❌ 錯誤：沒有 disabled，使用者連點會多次觸發 action
+<Button onClick={() => actions.someAction(value)}>確認</Button>
+```
+
+若一個 handler 依序呼叫多個 store action，以**第一個 action** 的 `runningActions` 控制 UI：
+
+```tsx
+const handleSubmit = async () => {
+    await actions.firstAction(value);   // 最耗時的步驟
+    await actions.secondAction();
+    await actions.thirdAction();
+};
+
+<Button disabled={runningActions.firstAction} onClick={handleSubmit}>
+    {runningActions.firstAction ? <Loader2 className="w-4 h-4 animate-spin" /> : '送出'}
+</Button>
+```
+
+---
+
 ## DeferredPromise + React Suspense 注意事項
 
 ### 問題背景
