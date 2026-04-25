@@ -129,7 +129,6 @@ const handleSubmit = async () => {
 </Button>
 ```
 
-> 參考：`next/app/checkout/page.tsx` 的 `handleSubtotalClick` 與 `isSubtotalProcessing`。
 
 ---
 
