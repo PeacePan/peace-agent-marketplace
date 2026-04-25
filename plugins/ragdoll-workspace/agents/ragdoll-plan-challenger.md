@@ -21,7 +21,7 @@ tools:
 permissionMode: bypassPermissions
 ---
 
-# Ragdoll Challenge Me Agent
+# Ragdoll Plan Challenger Agent
 
 ## 角色定義
 

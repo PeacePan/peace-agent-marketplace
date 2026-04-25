@@ -1,7 +1,7 @@
 ---
 name: ragdoll-electron-rd
 description: 負責實作 Ragdoll Electron 相關功能，事務包含 SQLite 資料庫、IPC 串接、javacat-graphql-client GraphQL 串接、背景排程工作與 Node.js 後端相關邏輯
-model: sonnet
+model: opus
 color: yellow
 skills:
     - typescript-advanced-types
