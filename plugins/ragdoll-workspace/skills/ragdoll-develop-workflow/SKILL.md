@@ -107,7 +107,15 @@ cd .. && npx husky install
 | Integration | 跨 Store / IPC / API 的互動，Unit 無法覆蓋 | Unit 已能完整驗證的範圍 |
 | E2E | 使用者可見的完整流程（每條流程只寫一個） | 內部模組細節，Integration 已覆蓋的 |
 
+> **⚠ writing-plans 流程覆寫（MUST 遵守）**
+> `writing-plans` 儲存 Plan 文件後會詢問「Subagent-Driven 或 Inline Execution？」。
+> 在本工作流程中，**MUST 跳過此問題，不得詢問使用者，立即進入 Step 2.5**。
+
+**⛔ HARD GATE — writing-plans 完成後，唯一的下一步是 Step 2.5，不得跳過。**
+
 ### Step 2.5 — HARD GATE：plan-challenger 審查
+
+> 此步驟在 `writing-plans` 儲存 Plan 完成後**自動觸發**，不需使用者確認。
 
 將 Plan + 三層 Test Cases 一起交給 `ragdoll-workspace:ragdoll-plan-challenger`：
 
