@@ -23,7 +23,7 @@
 const records = await client.query.find({
   table: 'member',
   filters: [{ body: { name: { $eq: 'john' } } }],
-  sorting: { field: 'body.createdAt', direction: -1 },
+  multiSort: [{ field: 'body.createdAt', direction: -1 }],
   limit: 20,
   offset: 0,
 });
@@ -85,12 +85,9 @@ controller.abort(); // 中止
 ### 排序
 
 ```typescript
-// 單一排序
-sorting: { field: 'body.createdAt', direction: -1 } // -1 降冪，1 升冪
-
 // 多條件排序（最多兩個欄位）
 multiSort: [
-  { field: 'body.category', direction: 1 },
+  { field: 'body.category', direction: 1 }, // -1 降冪，1 升冪
   { field: 'body.name', direction: 1 },
 ]
 ```
