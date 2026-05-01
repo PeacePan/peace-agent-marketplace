@@ -5,9 +5,10 @@ description: >
   使用者訊息出現以下任一關鍵字 → 必載入並優先以本 MCP 處理：
   萬達中台、中台、萬達資料庫、JavaCat、NorwegianForest、Norcat、查中台、查表、查資料、
   查 possale / posmember / member / item 等業務表、要看某張表、新增中台、更新中台、
-  以及任何提到 javacat_find / javacat_count / javacat_insert / javacat_update /
-  javacat_list_tables / javacat_login / javacat_request_otp /
-  javacat_switch_environment 的場合。涵蓋使用前置流程、查詢效能守則
+  以及任何提到 javacat_find / javacat_count / javacat_summarize /
+  javacat_insert / javacat_update / javacat_list_tables / javacat_login /
+  javacat_request_otp / javacat_switch_environment / norcat_patch / norcat_insert 的場合。
+  也含 NorcaT 表格部署指令（patch / insert 至 dev / staging / production）。涵蓋使用前置流程、查詢效能守則
   （查紀錄必給日期範圍）、filter cheat sheet（含完整 operator 表）、
   常用 table 速查（依 TABLE_GROUP 分領域 + 31 張系統表，cross-link 業務 skill）、
   典型查詢/插入/更新範例與錯誤對照。專為「透過 MCP 工具」操作的 agent 設計，
@@ -16,7 +17,7 @@ description: >
 
 # mcp-wonderpet-table 使用指南
 
-8 個 MCP tool 的 input schema 在工具列表已說明，本指南聚焦於：**先做什麼、查哪張表、filter 怎麼寫、怎麼避開常見錯誤**。
+11 個 MCP tool 的 input schema 在工具列表已說明，本指南聚焦於：**先做什麼、查哪張表、filter 怎麼寫、聚合語意走 summarize、CUD 二次確認制度、NorcaT 部署指令、怎麼避開常見錯誤**。
 
 ---
 
@@ -52,6 +53,23 @@ elicitation 兩段對話（自動跳出）
 - **正常路徑**：直接呼叫 `javacat_find`，未登入時 server 主動跳對話、登入後自動續跑，**不必先呼叫 login**。
 - **自動化路徑**：呼叫 `javacat_login` 帶 `method='access_key' + accessKeyId + secretAccessKey`，繞過 elicitation（適合無人值守場景）。
 - **對話被 cancel/decline**：回應「已取消登入，未執行原工具」，**不會自動 retry**。要重試請再次呼叫工具並完整填完表單。
+
+### ⚠️ CUD 二次確認制度（強制）
+
+`javacat_insert` / `javacat_update` 在實際寫入資料**之前**會自動發 elicitation 對話，內含本次操作的：
+- 環境（env）、表格（table）、操作種類（insert / update）
+- 影響筆數
+- 前 3 筆 sample（insert 顯示 body / lines、update 顯示 id 與改動範圍）
+
+使用者勾選「我已確認上方操作內容、同意執行」並送出後才會真正執行；**任何取消、拒絕、忽略均中止 mutation**。Agent 不應嘗試把 confirm 對話「自答」為 true 來繞過 — 那是給人用的 gate。
+
+| 情境 | 行為 |
+|------|------|
+| 一般人工互動 | 直接呼叫 `insert` / `update`，confirm 對話會自動跳 |
+| 不支援 elicitation 的 client | 工具回 error，要求設環境變數明示授權；不會直接寫入 |
+| 自動化 / access_key 場景 | 啟動 server 前設環境變數 `MCP_WONDERPET_TABLE_AUTO_CONFIRM=1` 跳過確認 |
+
+> Read 操作（`find` / `count` / `summarize` / `list_tables`）**不會跳確認**，只有 CUD 才會。
 
 ---
 
@@ -214,6 +232,63 @@ filters: [                          ← 頂層陣列：OR 關係
 ```json
 { "table": "possale", "archived": "NORMAL", "approved": "APPROVED" }
 ```
+
+### ⚠️ 聚合語意一律走 `javacat_summarize`（必讀）
+
+當使用者意圖是「**列出 / 統計 / 計算 / 哪些最多 / 排行 / 依 X 分類**」時，**第一反應請改用 `javacat_summarize`**。它在 server 端用 `client.query.find` 拉純小資料、JS Map 做 group + aggregate，回應永遠很小。
+
+**反模式（嚴禁）**：用 `javacat_find` 拉全部資料 → 在 agent 端開 Bash / Python / jq 子程序聚合。這會踩三個坑：
+1. 25,000 字元截斷 → 結果不全
+2. Windows console 中文編碼 → 亂碼
+3. 浪費 context window
+
+#### 速覽決策
+
+| 使用者語意 | 該用什麼 |
+|----------|---------|
+| 「列出昨天 ERROR 有哪些」「依表名 / 函數名分組」 | `javacat_summarize` + `groupBy` + `count` |
+| 「總共幾筆」 | `javacat_count` |
+| 「給我前 N 筆原始 row」 | `javacat_find`（限縮 selects + skipLines） |
+| 「哪個 ID 是什麼」 | `javacat_find` + `_id in [...]` |
+
+#### 典型對應範例
+
+「production 昨天 ERROR 工作歷程，依表名與函數名分組看哪幾種最多」：
+```json
+{
+  "table": "__joblog__",
+  "filters": [{ "bodyConditions": [
+    { "fieldName": "_createdAt", "valueType": "DATE", "operator": "gte", "date": "2026-04-30T00:00:00+08:00" },
+    { "fieldName": "_createdAt", "valueType": "DATE", "operator": "lt",  "date": "2026-05-01T00:00:00+08:00" },
+    { "fieldName": "status",     "valueType": "STRING", "operator": "in", "string": "ERROR" }
+  ]}],
+  "groupBy": ["body.tableName", "body.functionName"],
+  "aggregations": [{ "fn": "count", "alias": "count" }],
+  "topN": 20
+}
+```
+
+「最近 30 天每門市的 possale 平均金額 + 筆數」：
+```json
+{
+  "table": "possale",
+  "filters": [{ "bodyConditions": [
+    { "fieldName": "_createdAt", "valueType": "DATE", "operator": "gte", "date": "<30 天前 ISO>" }
+  ]}],
+  "groupBy": ["body.storeId"],
+  "aggregations": [
+    { "fn": "count", "alias": "count" },
+    { "fn": "avg", "field": "body.totalAmount", "alias": "avgAmount" },
+    { "fn": "sum", "field": "body.totalAmount", "alias": "totalAmount" }
+  ],
+  "sortBy": "totalAmount",
+  "topN": 50
+}
+```
+
+#### 安全閥：`maxScanRows`（預設 50,000）
+
+`summarize` 會先 `count` 確認量；若超過 `maxScanRows` 就只掃前 N 筆並回 `truncated: true`，agent 應提示使用者縮小日期或加條件。**不要直接調高 `maxScanRows` 來壓 truncated**——根本解是縮小範圍。
 
 ---
 
@@ -441,7 +516,74 @@ javacat_update({
 
 ---
 
-## 7. 與其他 skill 的分工
+## 7. NorcaT 表格部署指令（norcat_patch / norcat_insert）
+
+跟前面查中台資料的工具不同，這兩個 tool 是**部署**用的：把 `NorwegianForest/tables/` 內定義的 schema 變更套用到 dev / staging / production 環境。
+
+### 環境前置（強制）
+
+啟動 mcp-wonderpet-table 前必須設定 **`NORWEGIANFOREST_DIR`** 指向 NorwegianForest 絕對路徑，否則 norcat tool 無法執行。
+
+| 平台 | 設定方式 |
+|------|---------|
+| Windows (PowerShell) | `setx NORWEGIANFOREST_DIR "C:\Users\<user>\github\petpetgo\NorwegianForest"` 重啟 shell |
+| Windows (system) | 控制台 → 環境變數 → 新增使用者變數 |
+| macOS / Linux | `export NORWEGIANFOREST_DIR="/path/to/NorwegianForest"` 寫入 `~/.zshrc` 或 `~/.bashrc` |
+
+設定錯誤時 tool 會回 actionable 錯誤訊息（例：「name 為 ‘xxx’、不是 norwegianforest」）。
+
+### 工具行為
+
+| 工具 | 對應 npm script | 用途 |
+|------|----------------|------|
+| `norcat_patch` | `npm run patch:<env>` | 套用既有表格的 schema 變更 |
+| `norcat_insert` | `npm run insert:<env>` | 首次插入新建表格 |
+
+### 二次確認規則（嚴格）
+
+- **dev / staging**：跳 confirm 對話；可設 `MCP_WONDERPET_TABLE_AUTO_CONFIRM=1` 跳過（自動化用）
+- **production**：**強制人工 confirm，無法以環境變數跳過**；對話額外標紅警示 🚨
+
+### 衝突重試
+
+寫入衝突（race condition）時 tool **自動整批 retry**：
+- 預設 `maxRetries=5`、`retryDelaySeconds=10`
+- NorcaT patch / insert 對已成功表格 idempotent，整批重跑無副作用
+- 對 sprint deploy 這類「百張表批次部署」場景很有用
+
+### Branch 安全網
+
+`bin/table.sh` 自帶 branch 檢查：
+- `production` → 必須 `release/*` 或 `*hotfix/*` 分支
+- `staging` → 必須 `staging/*` 或 `*hotfix-staging/*` 分支
+
+不在這些分支時 npm script 自己會 exit 1，tool 內部 retry 也救不了 — 這是設計使然，避免從錯誤分支推到 prod。
+
+### 用法範例
+
+單表 patch dev：
+```js
+norcat_patch({ env: 'dev', tables: ['transferorder'] })
+```
+
+production 批次部署（跳出 confirm 對話、強制 ✋）：
+```js
+norcat_patch({
+  env: 'production',
+  tables: ['transferorder', 'wdshqtransit', 'wdshqtransitoperation'],
+  maxRetries: 8,
+  retryDelaySeconds: 15
+})
+```
+
+### 批次 sprint 部署 → 載入專屬 orchestration skill
+
+讀 Confluence sprint 頁面、自動分段 patch / insert 的完整流程在另一本 skill：
+**`norwegianforest-workspace:norcat-deploy-from-confluence`**。
+
+---
+
+## 8. 與其他 skill 的分工
 
 | 想做的事 | 載入哪本 skill |
 |---------|---------------|
@@ -454,3 +596,4 @@ javacat_update({
 | 調撥單業務邏輯 | `norwegianforest-workspace:transferorder-business-logic` |
 | 撰寫 policy / hook / function 腳本 | `norwegianforest-workspace:function-script-context` |
 | 為腳本撰寫測試 | `norwegianforest-workspace:norwegianforest-testing-architecture` |
+| 依 Confluence sprint 頁面批次部署 NorcaT 表格 | `norwegianforest-workspace:norcat-deploy-from-confluence` |
