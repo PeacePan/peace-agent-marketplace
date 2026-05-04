@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "mcp-wonderpet-table": {
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/mcp-wonderpet-table/index.js"]
-    }
-  }
-}
