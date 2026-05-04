@@ -1,8 +1,8 @@
 {
-  "name": "wonderpet-agent-plugins",
-  "owner": { "name": "WonderPetRD" },
+  "name": "peace-agent-plugins",
+  "owner": { "name": "PeacePan" },
   "metadata": {
-    "description": "WonderPet RD AI 工具包"
+    "description": "PeacePan AI 工具包"
   },
   "plugins": [
     {
