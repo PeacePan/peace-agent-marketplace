@@ -110,26 +110,35 @@ next/src/**/point-promotion/   → references/modules/point-plus-cash.md
 - 更新文件中的程式碼片段（若有引用）
 - 若變更涉及新模組，根據模板建立新文件並更新 SKILL.md 索引
 
+> **必須實際寫入**：本 step **MUST** 透過 `Write` / `Edit` 工具實際變更檔案內容。**MUST NOT** 只在輸出中描述「將會更新 X 文件」、「建議補上 Y 段落」而不執行實際寫入動作。完成 Step 4 前，每一個列入更新清單的檔案都必須有對應的 Write/Edit 呼叫紀錄。
+
 ### Step 5 — 驗證與報告
 
-完成更新後，輸出摘要報告：
+完成更新後，輸出摘要報告。報告格式 **MUST** 為以下結構，且每個「已更新的文件」項目 **MUST** 對應到 Step 4 實際執行的 Write/Edit 呼叫：
 
 ```
 📋 知識庫更新摘要
 
 已更新的文件：
-- references/modules/checkout.md — 更新了 XX 邏輯的描述
-- references/electron/database.md — 新增了 XX 表格的說明
+- references/modules/checkout.md — 更新了 XX 邏輯的描述（Edit 工具：1 處變更）
+- references/electron/database.md — 新增了 XX 表格的說明（Write 工具：新增段落）
 
 新增的文件：
-- references/modules/xxx.md — 新模組文件
+- references/modules/xxx.md — 新模組文件（Write 工具：新檔案）
 
 索引變更：
-- SKILL.md — 新增了 xxx 的索引項目
+- SKILL.md — 新增了 xxx 的索引項目（Edit 工具）
 
 未變更（已是最新）：
 - references/modules/payment.md
 ```
+
+**自我驗收：** 報告完成前，自我檢查清單：
+
+- [ ] 「已更新的文件」清單中每一個檔案都有實際 Write/Edit 呼叫
+- [ ] 沒有「建議由主對話補做」、「請 orchestrator 處理」之類措辭
+- [ ] 沒有「無法處理 X，請手動完成」之類失敗轉嫁措辭
+- [ ] 若有檔案無法處理（例如目錄不存在、權限問題），明確列出原因，不省略
 
 ---
 

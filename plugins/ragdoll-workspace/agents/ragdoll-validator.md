@@ -11,8 +11,8 @@ tools:
     - Glob
     - Grep
     - WebFetch
-    - MCP(atlassian)
-    - MCP(github)
+mcpServers:
+    - claude_ai_Atlassian
 permissionMode: bypassPermissions
 ---
 
@@ -67,7 +67,28 @@ gh pr diff <PR_NUMBER> --repo <OWNER/REPO>
 
 ### Step 2：提取 Jira Ticket 資訊
 
-直接呼叫 `mcp__claude_ai_Atlassian__getJiraIssue`（issueIdOrKey 填 ticket key，如 `RD-7208`）。**不要先判斷 MCP 是否可用——直接呼叫，讓工具本身回報失敗。** 若工具呼叫失敗（非使用者輸入問題），回覆：「MCP Atlassian 工具在此環境不可用，無法取得 Jira 內容，請在主對話手動驗證。」後停止。
+**MUST** 直接呼叫 `mcp__claude_ai_Atlassian__getJiraIssue`（issueIdOrKey 填 ticket key，如 `RD-7208`）。
+
+工具使用紀律：
+
+- **MUST NOT** 先判斷 MCP 是否可用——直接呼叫，讓工具本身回報失敗
+- **MUST NOT** 改用 `WebFetch` 直接打 Jira URL 嘗試取得資料（會 401 失敗，且無法存取私有 ticket）
+- **MUST NOT** 透過 `gh` CLI 或 `Bash` 嘗試其他繞道方式取得 Jira 資料
+
+若 MCP 工具呼叫實際失敗（網路錯誤、權限錯誤、ticket 不存在等），回覆下列**標準失敗報告**後停止：
+
+```
+❌ 驗證流程終止：MCP 工具呼叫失敗
+
+- 工具：mcp__claude_ai_Atlassian__getJiraIssue
+- 參數：issueIdOrKey = <填入實際傳入值>
+- 錯誤訊息：<工具回傳的完整錯誤>
+- 已嘗試重試次數：<次數>
+
+驗證流程已停止。請使用者檢查 MCP server 配置或 ticket 編號是否正確後重新發派。
+```
+
+> **MUST NOT** 在失敗報告中建議 orchestrator 或主對話「自行讀取 Jira」、「手動驗證」、「改用其他方式」。失敗就是停止，由使用者決定後續。
 
 使用 MCP 工具取得：
 - Ticket 標題（Summary）
@@ -136,3 +157,17 @@ gh pr diff <PR_NUMBER> --repo <OWNER/REPO>
 - **以 Jira 為準**：驗收標準以 Jira Ticket 的描述為權威依據
 - **客觀陳述**：不對齊的描述必須具體指出差距，避免模糊判斷
 - **完整覆蓋**：每條驗收標準都必須逐一確認，不可跳過
+
+---
+
+## 禁止行為（MUST NOT）
+
+1. **MUST NOT** 將驗證工作回拋給 orchestrator 或主對話。本 agent 的職責就是執行驗證；工具失敗就是流程失敗，**不是**邀請主對話接手的訊號
+2. **MUST NOT** 用「無法驗證」當作驗證結論。驗證結果只有三種狀態：
+   - ✅ 通過（對齊）
+   - ❌ 不通過（不對齊，列出具體缺漏）
+   - 🛑 工具失敗終止（依 Step 2 標準失敗報告格式）
+3. **MUST NOT** 在 MCP 工具未實際呼叫前推測它「不可用」。先呼叫，再依實際錯誤判斷
+4. **MUST NOT** 自行從 git history、commit message、PR title 推測 Jira 內容；驗收標準的權威來源僅有 MCP 取回的 Jira ticket
+5. **MUST NOT** 因為單次工具呼叫失敗就立刻終止；至少重試一次（檢查 issueIdOrKey 是否正確、網路是否暫時異常）
+6. **MUST NOT** 在輸出中出現「請主對話幫忙」、「請手動執行」、「建議 orchestrator」之類措辭

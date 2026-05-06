@@ -6,7 +6,6 @@ color: purple
 memory: local
 skills:
     - wonderpet-general:code-review-principles
-    - wonderpet-general:github-create-pr-steps
     - wonderpet-general:github-update-pr-summary
 tools:
     - Read
@@ -16,8 +15,8 @@ tools:
     - Skill
     - Agent(Explore)
     - Agent(Task)
-    - MCP(atlassian)
-    - MCP(github)
+mcpServers:
+    - claude_ai_Atlassian
 permissionMode: bypassPermissions
 ---
 

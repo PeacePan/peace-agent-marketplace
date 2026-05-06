@@ -26,16 +26,17 @@ flowchart TD
 
     subgraph BV ["🔨 BUILD ↔ VERIFY — × N Tasks"]
         G1{"第一個 Task？"}
-        G1 -- 是 --> GIT["建立 Branch + PR\nlabel: working"]
+        G1 -- 是 --> GIT["建立 Branch（本地）"]
         G1 -- 否 --> RD
         GIT --> RD
         RD[["發派 RD Subagent\nragdoll-electron-rd / ragdoll-next-rd\n（可並行多實例）"]]
         RD --> QA[["QA 驗收\nragdoll-electron-qa / ragdoll-next-qa\nUnit + Integration Tests"]]
         QA --> QAR{"QA 通過？"}
         QAR -- 否 --> RD
-        QAR -- 是 --> CMT["git commit + push"]
+        QAR -- 是 --> CMT["git commit\n（不 push）"]
         CMT --> NEXTT{"還有 Task？"}
         NEXTT -- 是 --> RD
+        NEXTT -- 否 --> PUSH["一次性 git push\ngh pr create\nlabel: working"]
     end
 
     subgraph REVIEW_STAGE ["🔍 REVIEW — 審查"]
@@ -50,18 +51,16 @@ flowchart TD
 
     subgraph SHIP_STAGE ["🚀 SHIP — 交付"]
         KM[["ragdoll-knowledge-manager\n整體文件歸檔"]]
-        KM --> PR2[["wonderpet-general:github-create-pr-steps"]]
-        PR2 --> PRS[["wonderpet-general:github-update-pr-summary\n更新 PR 描述"]]
-        PRS --> DONE["label: working → done"]
-        DONE --> CHAT["Google Chat 摘要\n【Ragdoll 開發摘要】"]
-        CHAT --> END([完成])
+        KM --> PRS[["wonderpet-general:github-update-pr-summary\n更新 PR body"]]
+        PRS --> DONE["label: working → done\n+ 發送 Google Chat 摘要\n（兩件事都 MUST）"]
+        DONE --> END([完成])
     end
 
     CMR -- 否 --> B2
     CMR -- 是 --> E
     F -- 否 --> E
     F -- 是 --> G1
-    NEXTT -- 否 --> CR
+    PUSH --> CR
     CRR -- 是 --> RD
     E2ER -- 否 --> RD
     E2ER -- 是 --> KM
@@ -77,6 +76,6 @@ flowchart TD
     class A,A1,B,B2,B25 defineStyle
     class B3 gateStyle
     class E planStyle
-    class G1,GIT,RD,QA,CMT gateStyle
+    class G1,GIT,RD,QA,CMT,PUSH gateStyle
     class CR,VAL,E2EQA,E2ER reviewStyle
-    class KM,PR2,PRS,DONE,CHAT,END shipStyle
+    class KM,PRS,DONE,END shipStyle
