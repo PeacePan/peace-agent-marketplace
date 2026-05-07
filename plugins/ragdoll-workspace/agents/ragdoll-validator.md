@@ -1,7 +1,7 @@
 ---
 name: ragdoll-validator
 description: 驗證 Ragdoll 功能開發是否對齊需求，比對 Github PR 代碼變更與 Jira Ticket 驗收標準，確認開發成果符合業務需求。
-model: sonnet
+model: haiku
 color: purple
 skills:
     - ragdoll-project-knowledge

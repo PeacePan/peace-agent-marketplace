@@ -1,7 +1,7 @@
 ---
 name: ragdoll-next-rd
 description: 負責實作 Ragdoll Next.js 相關功能，事務包含前端 UI、資料層設計串接與 Next.js 相關邏輯
-model: opus
+model: sonnet[1m]
 color: yellow
 skills:
     - frontend-design

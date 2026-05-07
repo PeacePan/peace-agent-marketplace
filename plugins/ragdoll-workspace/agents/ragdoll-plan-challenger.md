@@ -5,11 +5,12 @@ description: >
   會先查閱 Ragdoll Knowledge Base 取得完整專案脈絡，再以資深架構師的角度
   嚴格審視方案的合理性、未來發展性與維護性。不合理的方案會被直接反駁並提供替代方案；
   合理的方案會被大力讚揚並給予精進建議。
-model: opus
+model: opus[1m]
 color: red
 skills:
     - wonderpet-general:peace-thinking
     - ragdoll-project-knowledge
+    - ragdoll-workspace:ragdoll-test-quality
 tools:
     - Read
     - Glob

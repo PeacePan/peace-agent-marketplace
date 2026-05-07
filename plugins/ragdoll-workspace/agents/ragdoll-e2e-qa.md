@@ -1,7 +1,7 @@
 ---
 name: ragdoll-e2e-qa
 description: 專門處理 Ragdoll 整體 e2e 的測試實作與維護，確保 Ragdoll POS 的核心結帳流程能順暢運行。
-model: sonnet
+model: sonnet[1m]
 color: green
 skills:
     - e2e-testing-patterns
