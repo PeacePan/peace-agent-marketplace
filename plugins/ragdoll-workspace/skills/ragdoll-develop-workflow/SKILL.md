@@ -220,8 +220,24 @@ git checkout -b RD-{ticket}-feature/ragdoll/{描述}
 - Task 描述與修改範圍
 - 對應的 Unit / Integration test cases
 - 相關 Spec / Plan 段落
+- **Plan 檔案的絕對路徑 + 該 Task 對應的「起始行號–結束行號」**（例：`/path/to/plan.md` L42–L78）
 
 **MUST NOT** 使用 general-purpose agent 執行 RD 任務。
+
+**⛔ Plan 行號交付 HARD GATE（MUST 遵守）**
+
+發派 subagent 實作 Plan 任務時：
+
+| 規則 | 說明 |
+|---|---|
+| **MUST 指定 Plan 檔案具體行號範圍** | 例：「請實作 `/path/to/plan.md` 的 L42–L78（Task 3）」，subagent 必須直接讀取該行號範圍作為實作依據 |
+| **MUST NOT 以 Orchestrator 自身對 Plan 的理解轉述任務** | 不得用「我整理過的需求摘要」、「我幫你濃縮過的步驟」、「依我理解 Plan 是要做 X」之類措辭替代 Plan 原文 |
+| **MUST NOT 省略或改寫 Plan 內容** | 即使 Plan 段落較長，仍必須完整交付對應行號範圍；補充說明可附加，但不得取代原文 |
+| **MUST 在訊息中明確指引 subagent 讀取行號** | 例：「請先用 Read 工具讀取上述行號範圍，再開始實作」 |
+
+> 設計理由：Orchestrator 對 Plan 的轉述會引入詮釋誤差與資訊遺失，造成實作與 Plan 偏離。Plan 是 [DEFINE] 階段經 plan-challenger 審查通過的權威文件，subagent **MUST** 以 Plan 原文為唯一實作依據。
+>
+> 此規則同樣適用於 Step 6（發派 QA）、Step 9（發派 Validator）、Step 10（發派 E2E QA）等所有需要參照 Plan 內容的 subagent 發派，**MUST** 一律附上 Plan 檔案路徑與對應行號範圍。
 
 ### Step 6 — QA 驗收（unit + integration）
 

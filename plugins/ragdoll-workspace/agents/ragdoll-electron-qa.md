@@ -12,7 +12,7 @@ model: sonnet
 color: blue
 skills:
     - ragdoll-project-knowledge
-    - ragdoll-test-quality
+    - ragdoll-workspace:ragdoll-test-quality
 permissionMode: bypassPermissions
 background: true
 ---

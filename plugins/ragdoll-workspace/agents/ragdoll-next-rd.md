@@ -15,12 +15,12 @@ skills:
     - web-design-guidelines
     - ragdoll-project-knowledge
 tools:
+    - Read
     - Write
     - Edit
     - Update
     - Bash
     - Skill
-    - Agent(Explore)
 permissionMode: bypassPermissions
 background: true
 ---

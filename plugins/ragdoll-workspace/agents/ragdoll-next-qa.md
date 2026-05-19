@@ -13,7 +13,7 @@ color: blue
 skills:
     - vitest
     - ragdoll-project-knowledge
-    - ragdoll-test-quality
+    - ragdoll-workspace:ragdoll-test-quality
 permissionMode: bypassPermissions
 background: true
 ---

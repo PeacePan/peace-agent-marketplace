@@ -7,6 +7,7 @@ description: >
 model: sonnet
 color: green
 skills:
+    - peace-wp-llm-wiki
     - ragdoll-project-knowledge
 tools:
     - Read
@@ -17,7 +18,6 @@ tools:
     - Grep
     - Bash
     - Skill
-    - Agent(Explore)
 permissionMode: bypassPermissions
 background: true
 ---

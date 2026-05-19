@@ -8,8 +8,9 @@ description: >
 model: opus[1m]
 color: red
 skills:
-    - wonderpet-general:peace-thinking
+    - peace-wp-llm-wiki
     - ragdoll-project-knowledge
+    - wonderpet-general:peace-thinking
     - ragdoll-workspace:ragdoll-test-quality
 tools:
     - Read
