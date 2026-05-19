@@ -25,9 +25,8 @@ description: 定義 Ragdoll 專案的六階段開發工作流程（Define → Pl
 | Plan 審查（Step 2.5） | `ragdoll-workspace:ragdoll-plan-challenger` |
 | RD 實作（Step 5） | `ragdoll-workspace:ragdoll-electron-rd` / `ragdoll-next-rd` |
 | 單元 / 整合測試（Step 6） | `ragdoll-workspace:ragdoll-electron-qa` / `ragdoll-next-qa` |
-| 整體 Jira 對齊驗證（Step 9） | `ragdoll-workspace:ragdoll-validator` |
-| E2E 測試（Step 10） | `ragdoll-workspace:ragdoll-e2e-qa` |
-| 知識庫文件更新（Step 11） | `ragdoll-workspace:ragdoll-knowledge-manager` |
+| E2E 測試（Step 9） | `ragdoll-workspace:ragdoll-e2e-qa` |
+| 知識庫文件更新（Step 10） | `ragdoll-workspace:ragdoll-knowledge-manager` |
 
 **Subagent 失敗的處理：**
 
@@ -39,7 +38,6 @@ description: 定義 Ragdoll 專案的六階段開發工作流程（Define → Pl
    - 等待使用者決定後續處理方式
 3. **嚴格禁止**以下接手行為：
    - 「我直接幫忙更新知識庫」
-   - 「我直接讀取 PR 與 Jira 比對」
    - 「我直接寫測試 / 改 code」
    - 「在主對話手動執行」
 4. 若 subagent 自身輸出含「請在主對話手動執行」之類邀請 Orchestrator 接手的措辭，視同 subagent 失敗，依本規則第 1–2 點處理
@@ -79,7 +77,7 @@ cd .. && npx husky install
 [DEFINE]         需求 → Brainstorming（可選）→ Plan + 三層 Test Cases → plan-challenger
 [PLAN]           Task 切分（含並行標注）+ HARD GATE
 [BUILD ↔ VERIFY] RD → QA（unit+integration）→ 本地 commit  × N Tasks → 一次 push + 建 PR
-[REVIEW]         Code Review（五維）→ Validator（整體對齊 Jira）→ E2E QA
+[REVIEW]         Code Review（五維）→ E2E QA
 [SHIP]           Knowledge Manager → PR 描述更新 → label done + Chat
 ```
 
@@ -237,7 +235,7 @@ git checkout -b RD-{ticket}-feature/ragdoll/{描述}
 
 > 設計理由：Orchestrator 對 Plan 的轉述會引入詮釋誤差與資訊遺失，造成實作與 Plan 偏離。Plan 是 [DEFINE] 階段經 plan-challenger 審查通過的權威文件，subagent **MUST** 以 Plan 原文為唯一實作依據。
 >
-> 此規則同樣適用於 Step 6（發派 QA）、Step 9（發派 Validator）、Step 10（發派 E2E QA）等所有需要參照 Plan 內容的 subagent 發派，**MUST** 一律附上 Plan 檔案路徑與對應行號範圍。
+> 此規則同樣適用於 Step 6（發派 QA）、Step 9（發派 E2E QA）等所有需要參照 Plan 內容的 subagent 發派，**MUST** 一律附上 Plan 檔案路徑與對應行號範圍。
 
 ### Step 6 — QA 驗收（unit + integration）
 
@@ -277,8 +275,6 @@ git commit -m "[Ragdoll] {清楚描述此 Task 的變更}"
 
 Commit 完成後 → 繼續下一個 Task（回 Step 5）或進入 Step 7.5。
 
-> Jira 對齊驗證已移至 [REVIEW] 階段（Step 9）整體執行，不再逐 Task 進行。原因：Jira ticket 的驗收條件通常由 PM 以使用者場景描述，逐 Task 片段比對不易；等所有 Task 完成後再由 `ragdoll-validator` 對齊整體實作，才符合 PM 撰寫驗收條件的粒度。
-
 ### Step 7.5 — 一次性 Push 並建立 PR（所有 Task 完成後執行）
 
 所有 Task 的本地 commit 完成後，**一次性**完成以下動作（CI/CD 此時才會首次觸發）：
@@ -317,35 +313,21 @@ gh pr edit --add-label "working"
 | 中風險 | 記錄於 PR comment，由使用者決定是否修正 |
 | 低風險 | 列入改善建議，不阻擋進入 Step 9 |
 
+
 > 高風險修正完成後，需在 Step 8 結束前再次 `git push`（CI/CD 會再跑一次）。低/中風險修正不在此處執行。
 
-### Step 9 — Validator（整體對齊 Jira）
-
-Code Review 通過後（或中/低風險記錄完畢），前景執行 `ragdoll-workspace:ragdoll-validator`，傳入 PR 位址 + Jira Ticket 位址，對「完整實作」進行 Jira 驗收條件對齊檢查。
-
-此步驟放在整體實作完成後執行，原因：
-- Jira ticket 的驗收條件多由 PM 以使用者場景撰寫，不對應單一 Task 的檔案變更
-- 等所有 Task 完成、Code Review 修正落地後，才能看到最終對齊狀態
-- 避免逐 Task 驗證時因片段實作無法判讀而重複誤判
-
-處理方式：
-
-- **通過** → 進入 Step 10
-- **不通過（驗證結果）** → 依缺漏對應回原 Task 的 [BUILD ↔ VERIFY] 修正（若涉及多個 Task，逐一轉交對應 RD），修正後重走 Step 8 → Step 9
-- **工具失敗（非驗證結果）** → 套用「Subagent 邊界規則」處理：重試一次 → 仍失敗則停止流程通知使用者。**MUST NOT** 由 Orchestrator 自行讀取 PR 與 Jira 進行驗證。
-
-### Step 10 — E2E QA
+### Step 9 — E2E QA
 
 發派 `ragdoll-workspace:ragdoll-e2e-qa`，執行 [DEFINE] 階段定義的 E2E test cases。
 
 - **通過** → 進入 [SHIP]
-- **失敗** → 定位失敗的 Task，轉交對應 RD 修正，修正後重走 [BUILD ↔ VERIFY] 該 Task，再回 Step 10
+- **失敗** → 定位失敗的 Task，轉交對應 RD 修正，修正後重走 [BUILD ↔ VERIFY] 該 Task，再回 Step 9
 
 ---
 
 ## [SHIP] 交付
 
-### Step 11 — Knowledge Manager（整體文件歸檔）
+### Step 10 — Knowledge Manager（整體文件歸檔）
 
 前景等待 `ragdoll-workspace:ragdoll-knowledge-manager` 完成整體知識庫更新。
 
@@ -376,7 +358,7 @@ git commit -m "[Ragdoll] docs: 更新知識庫文件"
 git push
 ```
 
-### Step 12 — 更新 PR 描述
+### Step 11 — 更新 PR 描述
 
 呼叫 `wonderpet-general:github-update-pr-summary`，**僅執行**「依範本更新 PR body」：
 
@@ -384,9 +366,9 @@ git push
 2. 從分支名稱解析 ticket 編號
 3. 填入實作摘要後更新 PR body
 
-> 此 skill **不會發送 chat、不會改 label、不會建立 PR**。所以 Step 13 的 chat 與 label 必須照常執行。
+> 此 skill **不會發送 chat、不會改 label、不會建立 PR**。所以 Step 12 的 chat 與 label 必須照常執行。
 
-### Step 13 — 完成通知（label + chat，兩件事都 MUST 執行）
+### Step 12 — 完成通知（label + chat，兩件事都 MUST 執行）
 
 **MUST** 完整執行下列**兩件事**，缺一不可：
 
@@ -398,8 +380,8 @@ gh pr edit --remove-label "working" --add-label "done"
 
 **(2) 發送 Google Chat 摘要：**
 
-> ⚠ **MUST 執行**。本工作流程在進入 Step 13 前**從未發送過任何 chat 通知**，Step 13 是**唯一**的通知時機。  
-> Agent **MUST NOT** 跳過此步驟。即使 Step 12 已完成、PR 已標 done，仍 **MUST** 發送 chat。
+> ⚠ **MUST 執行**。本工作流程在進入 Step 12 前**從未發送過任何 chat 通知**，Step 12 是**唯一**的通知時機。  
+> Agent **MUST NOT** 跳過此步驟。即使 Step 11 已完成、PR 已標 done，仍 **MUST** 發送 chat。
 
 標題：`【Ragdoll 開發摘要】`，內容包含：
 - 本次實作的功能說明
@@ -435,7 +417,6 @@ req.end();
 | `ragdoll-workspace:ragdoll-e2e-qa` | E2E 測試 | Playwright、結帳流程測試 |
 | `ragdoll-workspace:ragdoll-electron-qa` | Electron 測試 | Electron 層功能驗證 |
 | `ragdoll-workspace:ragdoll-next-qa` | Next.js 測試 | Next.js 層功能驗證 |
-| `ragdoll-workspace:ragdoll-validator` | 需求驗證 | 比對 PR 代碼變更與 Jira Ticket 驗收標準 |
 | `ragdoll-workspace:ragdoll-knowledge-manager` | 知識庫歸檔 | 更新專案知識庫文件（SHIP 階段整體執行） |
 | `ragdoll-workspace:ragdoll-plan-challenger` | Plan 審查 | 評估 Spec 與 Plan 可行性 |
 
