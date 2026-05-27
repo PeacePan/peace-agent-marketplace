@@ -22,7 +22,7 @@ description: 定義 Ragdoll 專案的六階段開發工作流程（Define → Pl
 
 | 工作 | 唯一執行者 |
 |---|---|
-| Plan 審查（Step 2.5） | `ragdoll-workspace:ragdoll-plan-challenger` |
+| Plan 審查（Step 2.5） | `wonderpet-general:plan-challenger` |
 | RD 實作（Step 5） | `ragdoll-workspace:ragdoll-electron-rd` / `ragdoll-next-rd` |
 | 單元 / 整合測試（Step 6） | `ragdoll-workspace:ragdoll-electron-qa` / `ragdoll-next-qa` |
 | E2E 測試（Step 9） | `ragdoll-workspace:ragdoll-e2e-qa` |
@@ -145,7 +145,7 @@ cd .. && npx husky install
 
 > 此步驟在 `writing-plans` 儲存 Plan 完成後**自動觸發**，不需使用者確認。
 
-將 Plan + 三層 Test Cases 一起交給 `ragdoll-workspace:ragdoll-plan-challenger`：
+將 Plan + 三層 Test Cases 一起交給 `wonderpet-general:plan-challenger`：
 
 - **通過** → 進入 [PLAN] 階段
 - **不通過** → 回 Step 2 修正，重新提交審查
@@ -421,7 +421,7 @@ req.end();
 | `ragdoll-workspace:ragdoll-electron-qa` | Electron 測試 | Electron 層功能驗證 |
 | `ragdoll-workspace:ragdoll-next-qa` | Next.js 測試 | Next.js 層功能驗證 |
 | `ragdoll-workspace:ragdoll-knowledge-manager` | 知識庫歸檔 | 更新專案知識庫文件（SHIP 階段整體執行） |
-| `ragdoll-workspace:ragdoll-plan-challenger` | Plan 審查 | 評估 Spec 與 Plan 可行性 |
+| `wonderpet-general:plan-challenger` | Plan 審查 | 評估 Spec 與 Plan 可行性 |
 
 ---
 
