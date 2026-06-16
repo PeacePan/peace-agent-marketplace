@@ -27,6 +27,7 @@ description: PR Code Review 原則與檢查清單。當需要審查 Pull Request
    - 重寫（核心邏輯替換）
    - 遷移（消費端適配新介面）
    - 刪除（移除舊實作）
+4. **掌握改動部分的全局脈絡**：由 PR 相關的 commit、issue、討論串中尋找背景資訊，再從 wiki 之類的 SKILL 文檔 (如：`peace-wp-llm-wiki`)，開始追查相關的程式碼
 
 ### Phase 2：由底向上逐層檢查
 

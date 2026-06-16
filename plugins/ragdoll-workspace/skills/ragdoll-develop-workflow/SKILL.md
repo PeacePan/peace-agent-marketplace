@@ -300,7 +300,7 @@ gh pr edit --add-label "working"
 
 ### Step 8 — Code Review（五維把關）
 
-呼叫 `wonderpet-general:code-review-principles`：
+使用 SKILL `wonderpet-general:code-review-principles`：
 
 | 維度 | 檢查重點 |
 |---|---|
