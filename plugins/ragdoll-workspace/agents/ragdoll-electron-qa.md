@@ -8,7 +8,7 @@ description: >
   - 現有 Electron 測試失敗需要診斷並修復（npm run test:electron 出現錯誤）
   - 確保 Electron 層測試全數通過
   - 修改 Electron 程式碼後需要補齊對應測試
-model: sonnet
+model: claude-sonnet-5
 color: blue
 skills:
     - ragdoll-project-knowledge

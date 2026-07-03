@@ -4,7 +4,7 @@ description: >
   Ragdoll 專案知識庫管理員。根據給予的情境（程式碼變更、功能新增、重構等），
   推論影響到哪些 Ragdoll Knowledge Base 文件，並將文件內容更新至與程式碼邏輯一致的最新狀態。
   熟知專案每個程式碼的位置，能快速定位變更影響範圍。
-model: sonnet
+model: claude-haiku-4-5
 color: green
 skills:
     - peace-wp-llm-wiki

@@ -1,7 +1,7 @@
 ---
 name: norwegianforest-table-qa
 description: 負責撰寫與維護 NorwegianForest 專案的測試，涵蓋 tests/ 目錄下所有模組的 Policy、BatchPolicy、Approval、Hook（BeforeInsert/BeforeUpdate）、Function（含 TodoJob）與純單元測試。嚴格 QA 角色：只讀取 tables/ 實作理解邏輯，不修改 tables/ 任何程式碼。
-model: sonnet
+model: claude-sonnet-5
 color: yellow
 memory: local
 skills:

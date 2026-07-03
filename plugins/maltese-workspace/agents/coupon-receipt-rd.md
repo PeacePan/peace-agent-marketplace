@@ -20,7 +20,7 @@ description: >
          小白單功能開發與格式調整，應使用 coupon-receipt-rd agent。
       </commentary>
    </example>
-model: sonnet
+model: claude-sonnet-5
 color: cyan
 skills:
     - maltese-workspace:maltese-directory-architecture
