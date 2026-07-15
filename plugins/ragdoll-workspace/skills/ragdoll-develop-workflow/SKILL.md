@@ -312,12 +312,11 @@ gh pr edit --add-label "working"
 
 | 風險等級 | 處理方式 |
 |---|---|
-| 高風險（資料遺失、安全漏洞、production 崩潰） | **MUST** 回對應 Task 的 [BUILD ↔ VERIFY] 修正，修正後重回 Step 8 |
-| 中風險 | 記錄於 PR comment，由使用者決定是否修正 |
+| 高、中風險 | **MUST** 回對應 Task 的 [BUILD ↔ VERIFY] 修正，修正後重回 Step 8 |
 | 低風險 | 列入改善建議，不阻擋進入 Step 9 |
 
 
-> 高風險修正完成後，需在 Step 8 結束前再次 `git push`（CI/CD 會再跑一次）。低/中風險修正不在此處執行。
+> 高、中風險修正完成後，需在 Step 8 結束前再次 `git push`（CI/CD 會再跑一次）。低風險修正不在此處執行。
 
 ### Step 9 — E2E QA
 
