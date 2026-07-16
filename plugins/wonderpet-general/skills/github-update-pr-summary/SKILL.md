@@ -28,7 +28,7 @@ description: 依照規範產生並更新 GitHub PR 描述。根據 PR 是否包�
 
    從分支名稱中解析出 ticket 編號（依照呼叫方提供的 `branch-naming-rule` 格式）。
    若分支名稱不包含 ticket 編號，卡片連結欄位填入：`分支名稱沒有包含 ticket 編號，無法產生 ticket 連結`。
-   PR 標題格式為：`[專案名稱][<ticket編號>] - <15 字內PR-title>`，若無法解析 ticket 編號，PR 標題格式為：`[專案名稱] <15 字內PR-title>`。
+   PR 標題格式為：`[專案名稱][<ticket編號>] <15 字內PR-title>`，若無法解析 ticket 編號，PR 標題格式為：`[專案名稱] <15 字內PR-title>`。
 
 3. **使用對應範本填入描述後，更新 PR**：
 
