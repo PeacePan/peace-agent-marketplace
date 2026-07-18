@@ -151,6 +151,27 @@ description: 把一個粗略需求、大型工作（Epic）或技術設計文件
 
 ## 建立 issue 的技術細節
 
+### 建立前必做：schema 探勘（避免反覆試錯）
+
+**動手 `createJiraIssue` 前，先確認以下三件事**，尤其是 issue type 不是「任務」時。少了這步會踩到「規格欄位 ID 不對」「代碼庫名稱缺 allowedValue」「issueTypeName 拼字不對」等問題，反覆 400 浪費呼叫額度：
+
+1. **讀 [[wonderpet-general:jira-overview]] 的「各類型特有的必填欄位」表**，確認：
+   - 該類型的規格欄位是哪個 ID（`任務=customfield_10057`、`故事/Optimization=customfield_10061`）
+   - 有無專屬必填欄位（`Optimization=customfield_10066 代碼庫名稱`、`漏洞=customfield_10038 上線版本` 等）
+2. **對「特殊 / 冷門類型」跑一次即時 schema**（Optimization / Discussion / Meeting）：
+   ```
+   getJiraIssueTypeMetaWithFields(cloudId, 'RD', <類型 id>, requiredFieldsOnly=false)
+   ```
+   拿到每個欄位的 `required` 與 `allowedValues`。**選單欄位（代碼庫名稱、專案名稱、Flagged 等）在傳值前必須確認 allowedValue 存在**，否則會被拒收。
+3. **`issueTypeName` 傳 Jira UI 顯示的字串**：中文類型傳中文（「任務」「漏洞」「故事」「大型工作」「Meeting」），英文類型傳英文（`Optimization`、`Discussion`、`Test`）。
+
+### 常見踩雷：代碼庫名稱查無對應值
+
+Optimization 必填 `customfield_10066`，但截至 2026-07 選單中**沒有 Ragdoll**（雖然 Ragdoll 是活躍模組）。若目標 repo 不在選單裡：
+
+- **短期 fallback**：改用「任務」（issuetype 10007）開卡。任務不必填代碼庫名稱，前綴 summary 用 `[Ragdoll]` 標明模組即可。討論紀錄補一句「原應為 Optimization，因代碼庫名稱選單缺對應值改開任務」。
+- **長期解**：請 Jira 管理員在 `customfield_10066` 新增對應值，之後視需要把卡改回 Optimization。
+
 ### 必填欄位（任務 issuetype 10007）
 
 | 欄位 | Field ID | 內容 | 格式 |

@@ -164,6 +164,15 @@ JQL：`"專案名稱" = "新版結帳"` 或 `cf[10067] = "DSV"`。
 
 更完整的 repo 對應請參考 `peace-wp-llm-wiki/wiki/index.md`。
 
+### ⚠️ 沒有對應選項時的 fallback
+
+**Ragdoll 目前沒有代碼庫名稱選項**（截至 2026-07）。若要為某 repo 開 Optimization 但選單裡查不到對應值：
+
+1. **改開「任務」（issuetype 10007）**：任務類型不必填代碼庫名稱，可直接建。前綴 summary 用 `[Ragdoll]` 之類標明模組即可。
+2. 同步請 Jira 管理員在 `customfield_10066` 選單新增對應值，之後再視需要改回 Optimization 類型。
+
+**判斷依據**：`getJiraIssueTypeMetaWithFields(issueTypeId=10039)` 回傳的 `customfield_10066.allowedValues` 是 authoritative 清單，本文件的表格為快照，可能過時。動手前先拉一次即時 schema。
+
 ---
 
 ## 常見標籤（labels）
@@ -279,6 +288,22 @@ JQL 注意：
 - `customfield_10067` 專案名稱 — 若屬於某主題
 - `labels` — HOTFIX / CRM 等
 - `customfield_10112` 初始估點 — 留估點歷史
+
+**`issueTypeName` 用中文**：`createJiraIssue` 的 `issueTypeName` 參數要傳 Jira UI 上顯示的名稱，中文類型就是中文字串 —「任務」「漏洞」「故事」「大型工作」「Meeting」；只有 `Optimization` / `Discussion` / `Test` 是英文。
+
+### 建卡前先跑 schema 探勘
+
+**先讀本文件（快照）+ 建卡前對「特殊 / 冷門類型」再拉一次即時 schema**。冷門類型（Optimization / Discussion / Meeting）欄位變動較頻繁、選單值也會擴充：
+
+```
+getJiraIssueTypeMetaWithFields(
+  cloudId, projectIdOrKey='RD',
+  issueTypeId=<類型 id>,   // Task=10007, Story=10006, Bug=10008, Optimization=10039, Discussion=10038
+  requiredFieldsOnly=false // 想看所有欄位 + allowed values 時關掉
+)
+```
+
+回傳每個欄位含 `required`、`schema.type`、`allowedValues`。動手建卡前 5 秒就能檢查完必填 + 選單值，比反覆試錯 create → 400 error 快。
 
 ---
 
