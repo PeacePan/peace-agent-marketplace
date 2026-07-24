@@ -4,7 +4,7 @@ description: >
   NorwegianForest 專案表格與腳本的全域開發代理。負責所有業務領域（DSV 倉庫串接、
   調撥單、會員系統、POS 系統，以及未來新增領域）的表格建立、欄位定義、腳本開發
   （policy/hook/function/cron）與維護。
-model: claude-opus-4-8
+model: claude-sonnet-5
 color: green
 memory: local
 skills:
