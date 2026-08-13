@@ -196,6 +196,32 @@ test.describe('功能名稱', () => {
 });
 ```
 
+### ⚠️ 單一 test 內不要串接過多步驟（關鍵）
+
+**一個 `test()` 裡串太多業務步驟（登入 → 切模式 → 綁會員 → 開對話框 → 加項目 →
+量測版面 → 關對話框 → 點小計 → 開列表驗證 → 關列表 → 完成付款）會顯著拉長該
+test 的總執行時間，在 CI 高負載環境下大幅增加被時序問題（元素 not stable、
+browser closed、execution context destroyed 等）撞上的機率——而且撞上時整批
+其他完全無關的 test 也會一起遭殃（同一輪 CI 資源被這個長 test 拖垮）。**
+
+實際案例：一個把「版面裁切驗證」+「優惠券列表分類驗證」+「後付款收尾」全部
+串在同一個 test 的驗收測試，是造成整批 CI 連續多輪隨機崩潰的關鍵放大因子——
+單獨把這個 test skip 掉，其餘完全沒改動的測試就立刻穩定轉綠；拆成兩個各自
+獨立 `describe`/`launch`/`test` 的短測試（各自跑自己的登入/加項目流程）後，
+保留完整回歸防護範圍，CI 隨即恢復穩定。
+
+**寫新 test 前自問：**
+- 這個 test 是不是把「好幾件不相干的事」硬塞進同一次執行？
+- 拆成兩個獨立 test 會不會讓兩邊都更短、更聚焦？
+- 唯一該接受「多步驟串一個 test」的情況：後面步驟**必須依賴**前面步驟產生的
+  真實副作用（例如「先完成一筆真實結帳落地 offline_sale，再驗證離線 fallback
+  讀得到這筆資料」）。此時步驟間有真正的資料依賴，拆開反而需要重複造資料，
+  才不適合拆分。
+
+**MUST**：一個 test 內具業務意義的操作步驟數若明顯偏多（如超過 5-6 個）、且
+步驟之間沒有真正的資料依賴，優先拆成多個獨立 `describe`/`test`，即使會犧牲
+一點程式碼重複（重複的登入/加項目流程）也划算。
+
 ### Step 6：執行測試並診斷錯誤
 
 使用 `npm run test:e2e` 執行後，**測試失敗時絕對不可自行推論原因**，必須到 `test/e2e/test-results/` 查看：
@@ -342,6 +368,7 @@ E2E 測試與 local dev 相同，使用 `db:push` 而非 migration：
 | `net-isOnline` 只有 `mockData.isOnline` 存在時才安裝 | 無條件安裝：`mockNetOnline(app, mockData.isOnline ?? true)` |
 | 在 `app.evaluate()` 內呼叫 SQLite / Drizzle | catch-all 直接回傳 `[]`，不查真實 DB |
 | 新增 IPC handle 但不加進 `ALL_MOCK_CHANNELS` | 所有 `handle` 類型 channel 都必須加進 `ALL_MOCK_CHANNELS` |
+| 一個 test 塞入完整業務全流程（登入~付款~驗證多個回歸點） | 拆成多個獨立 test，各自只聚焦驗證一組具體行為 |
 
 ---
 
@@ -356,6 +383,7 @@ E2E 測試與 local dev 相同，使用 `db:push` 而非 migration：
 | 「無可用優惠券」但會員搜尋成功 | `db-list` catch-all 回傳 `[]` 影響 `pos_promotion` | 確認是否在 reload 前裝了 `db-list` mock |
 | Electron 整個凍結（「Electron 沒有回應」） | `app.evaluate()` 內執行了同步 SQLite 查詢 | 移除任何 `dbOps.*` 呼叫，改直接 return `[]` |
 | 前 N 個 spec 全過，第 N+1 個 spec 失敗 | Mock state bleed：前一個 spec 的 handler 殘留 | 確認 `ALL_MOCK_CHANNELS` 包含所有相關 channel |
+| CI 高負載下整批不相關 spec 隨機崩潰，找不到單一 bug 能解釋 | 某個 test 步驟數過多、執行時間過長，成為該輪 CI 資源競爭下最容易被時序問題撞上的那個，拖垮同批其他 test | 檢查最近新增/修改的 test 是否把多個驗證點串在同一個 test 裡；本機先 skip 該 test 重跑一輪比對崩潰是否消失，確認後拆成多個獨立 test |
 
 ### 截圖的讀取優先順序
 
