@@ -9,6 +9,7 @@ model: opus
 color: red
 skills:
     - wonderpet-general:peace-thinking
+    - wonderpet-general:code-review-principles
     - peace-wp-llm-wiki
     - ragdoll-project-knowledge
     - ragdoll-workspace:ragdoll-test-quality
