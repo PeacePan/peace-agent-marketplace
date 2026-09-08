@@ -11,8 +11,8 @@
 
 ## 操作步驟
 
-1. 應用程式啟動後直接進入 `/checkout`（根路由 `/` 為開機/機台選擇畫面，本次
-   手冊未涵蓋其細節）。
+1. 應用程式啟動後先看到根路由 `/`（極簡導航頁，見 `entries/home/AGENT.md`），
+   點擊「開始結帳」按鈕才會進入 `/checkout`。
 2. 未登入時，頂欄 `SalerLogin` 顯示唯讀輸入框（`data-testid="saler-input"`，
    placeholder「輸入員編」）。點擊輸入框會開啟數字鍵盤 Popover
    （`data-testid="saler-keypad-popover"`）。

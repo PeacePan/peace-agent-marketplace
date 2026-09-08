@@ -12,12 +12,12 @@ Ragdoll 是寵物店 POS 系統的下一代版本（Next.js + Electron），實�
 
 | 入口 | 路由 | 涵蓋狀態 |
 |------|------|---------|
-| 開機/機台選擇 | `/` | 待補（本次僅在 checkout 手冊內簡述如何從這裡進入 `/checkout`） |
-| 結帳 | `/checkout` | ✅ 本次已撰寫主線 + 功能選單，其餘（美容模式、促銷/退貨/換購/外送/報表/暫結等）待補 |
-| 美容結帳摘要 | `/salon-summary` | 待補 |
-| 顧客顯示螢幕 | `/customer-display` | 待補 |
+| 首頁 | `/` | ✅ 本次已撰寫（極簡導航頁） |
+| 結帳 | `/checkout` | ✅ 已撰寫主線 + 功能選單，其餘（美容模式、促銷/退貨/換購/外送/報表/暫結等）待補 |
+| 美容結帳摘要 | `/salon-summary` | 待補（複雜度等同 `/summary`，重用其付款元件，留待與 `/summary` 一起處理） |
+| 顧客顯示螢幕 | `/customer-display` | ✅ 本次已撰寫 |
 | 結帳摘要 | `/summary` | 待補 |
-| 列印預覽 | `/print-preview` | 待補 |
+| 列印預覽 | `/print-preview` | ✅ 本次已撰寫（若 Task 3 runtime 驗證受限，於 `entries/print-preview/AGENT.md` 內註明缺口） |
 
 **注意**：`sidemenu`（`next/app/sidemenu/`）不是獨立路由，底下沒有 `page.tsx`；
 `pos-menu-drawer` 是渲染在 `/checkout` 內的功能選單抽屜，其操作說明收在
@@ -28,6 +28,18 @@ Ragdoll 是寵物店 POS 系統的下一代版本（Next.js + Electron），實�
 - Agent 指引：`entries/checkout/AGENT.md`
 - 操作流程索引：見 `entries/checkout/AGENT.md` 的「業務流程索引」表格
 
+## 首頁（`/`）
+
+- Agent 指引：`entries/home/AGENT.md`
+
+## 客顯二顯螢幕（`/customer-display`）
+
+- Agent 指引：`entries/customer-display/AGENT.md`
+
+## 列印預覽（`/print-preview`）
+
+- Agent 指引：`entries/print-preview/AGENT.md`
+
 ## 待補範圍
 
 以下尚未撰寫操作手冊，驗收流程遇到涉及這些範圍的驗收條件時，應標記「⚠️ 無法
@@ -36,9 +48,11 @@ Ragdoll 是寵物店 POS 系統的下一代版本（Next.js + Electron），實�
 交叉比對 `test/e2e/pages/` 的對應 Page Object，可行時用 `ragdoll-electron` 工具
 做 runtime 驗證）逐步補齊：
 
-- `/`（開機/機台選擇）
-- `/checkout` 的其餘範圍（美容模式、促銷、退貨、換購、外送匯入、報表、暫結等）
-- `/salon-summary`、`/customer-display`、`/summary`、`/print-preview`
+- `/checkout` 的其餘範圍（美容模式、促銷、退貨、換購、外送匯入、報表、暫結等，
+  各自是獨立的對話框子系統，`next/app/checkout/components/` 底下有 20 幾個）
+- `/summary`、`/salon-summary`（兩者共用 `next/app/summary/components/` 的付款
+  元件——現金/信用卡/台新 One 碼/宜睿代金券/Pandago/離線信用卡等多種付款方式，
+  複雜度遠高於其餘小路由，建議合併成一份計畫處理）
 
 ## 與 `ragdoll-project-knowledge` 的分工
 
