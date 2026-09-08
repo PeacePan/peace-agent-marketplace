@@ -2,8 +2,9 @@
 
 > ⚠️ 本文件僅依原始碼撰寫，尚未經 runtime 畫面驗證（撰寫當下 Ragdoll dev 環境
 > 未啟動，`list_electron_windows` 回報找不到任何視窗），下次有 Ragdoll dev
-> 環境啟動的 session 時應補做；付款中／結帳完成兩個 phase 另需具備可操作的
-> 刷卡機/現金設備才能完整驗證，見 `references/02-payment-and-completed.md`
+> 環境啟動的 session 時應補做；結帳完成 phase 需實際送出付款才能觸發，需具備
+> 可操作的刷卡機/現金設備才能完整驗證，付款中 phase 可由點擊小計、進入促銷
+> 結算對話框驗證，不需要實體設備，見 `references/02-payment-and-completed.md`
 > 開頭標註。
 
 ## 入口資訊
@@ -32,7 +33,7 @@ fallback 至 IdleScreen：
 
 | Phase | UI 元件 | 觸發條件（摘要，詳見對應 references） |
 |---|---|---|
-| `CHECKOUT_IDLE` | `IdleScreen` | 購物車空、未識別會員，且非結帳完成後 8 秒展示期間 |
+| `CHECKOUT_IDLE` | `IdleScreen` | 購物車空、未識別會員，且非結帳完成後 8 秒展示期間；或購物車非空／已識別會員，但主視窗離開 `/checkout`、`/summary`（例如切到美容結帳摘要）且促銷結算對話框未開啟 |
 | `CHECKOUT_SHOPPING` | `ShoppingScreen` | 購物車非空或已識別會員，且主視窗在 `/checkout` 路由、促銷結算對話框未開啟 |
 | `CHECKOUT_PAYMENT` | `PaymentScreen` | 購物車非空或已識別會員，且主視窗在 `/summary` 路由或促銷結算對話框開啟中 |
 | `CHECKOUT_COMPLETED` | `CompletedScreen` | 購物車與會員皆已清空、結帳完成旗標為真（完成後 8 秒自動回 `CHECKOUT_IDLE`） |
@@ -82,5 +83,7 @@ fallback 至 IdleScreen：
 - 二顯 renderer 完全解耦主視窗 Zustand store，純以 IPC 被動接收快照更新
   （`use-customer-display-snapshot.ts` 註解），無法透過主視窗 DOM/store 間接
   驗證二顯畫面內容，必須直接對二顯視窗操作（screenshot / query DOM）。
-- 付款中／結帳完成兩個 phase 需要實際刷卡機/現金設備才能完整驗證，本次手冊
-  該部分僅依原始碼撰寫，見 `references/02-payment-and-completed.md` 開頭標註。
+- 結帳完成 phase 需實際送出付款才能觸發，需要實際刷卡機/現金設備才能完整
+  驗證；付款中 phase 可由點擊小計、進入促銷結算對話框驗證，不需要實體設備。
+  本次手冊該部分僅依原始碼撰寫，見 `references/02-payment-and-completed.md`
+  開頭標註。

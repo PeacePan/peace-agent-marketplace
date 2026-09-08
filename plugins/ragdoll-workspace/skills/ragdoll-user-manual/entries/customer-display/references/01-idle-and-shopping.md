@@ -3,7 +3,7 @@
 > 來源：原始碼（`next/app/customer-display/page.tsx`、`components/idle-screen.tsx`、
 > `components/shopping-screen.tsx`、`components/member-info-card.tsx`、
 > `components/invoice-section.tsx`、`hooks/use-customer-display-snapshot.ts`、
-> `lib/customer-display/build-snapshot.ts`、`lib/customer-display/idle-banners.ts`）
+> `next/lib/customer-display/build-snapshot.ts`、`next/lib/customer-display/idle-banners.ts`）
 > + E2E Page Object（`test/e2e/pages/customer-display-screen-page.ts`）。
 > ⚠️ 尚未經 runtime 畫面驗證（撰寫當下 Ragdoll dev 環境未啟動，
 > `list_electron_windows` 回報找不到任何視窗）。

@@ -149,9 +149,9 @@ mcp__claude_ai_Atlassian__getJiraIssue(
 ## Step 3：讀操作手冊
 
 載入 `ragdoll-workspace:ragdoll-user-manual` skill，依驗收條件內容判斷涉及哪個
-入口/功能（本次僅 `checkout` 主線 + 功能選單有完整內容）。若條件涉及尚未撰寫手
-冊的範圍，在報告中標記該條「⚠️ 無法驗證（手冊尚未涵蓋此範圍）」，不要憑空猜測
-操作方式。
+入口/功能（涵蓋範圍以 `ragdoll-user-manual/SKILL.md` 的路由涵蓋狀態表為準）。
+若條件涉及尚未撰寫手冊的範圍，在報告中標記該條「⚠️ 無法驗證（手冊尚未涵蓋此
+範圍）」，不要憑空猜測操作方式。
 
 ---
 

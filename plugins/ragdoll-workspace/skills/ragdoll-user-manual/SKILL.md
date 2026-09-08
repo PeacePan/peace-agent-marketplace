@@ -1,6 +1,6 @@
 ---
 name: ragdoll-user-manual
-description: 用於回答 Ragdoll POS 系統終端使用者的操作問題，並作為實機驗收時判斷「正確操作方式」的依據。涵蓋 checkout（一般/美容結帳合一入口）等各入口的 UI 流程說明。
+description: 用於回答 Ragdoll POS 系統終端使用者的操作問題，並作為實機驗收時判斷「正確操作方式」的依據。涵蓋 checkout（一般/美容結帳合一入口）、customer-display（顧客顯示螢幕）、print-preview（列印預覽）等各入口的 UI 流程說明。
 ---
 
 # Ragdoll POS 使用手冊
@@ -12,12 +12,12 @@ Ragdoll 是寵物店 POS 系統的下一代版本（Next.js + Electron），實�
 
 | 入口 | 路由 | 涵蓋狀態 |
 |------|------|---------|
-| 首頁 | `/` | ✅ 本次已撰寫（極簡導航頁） |
+| 首頁 | `/` | ✅ 已撰寫（極簡導航頁；runtime 驗證缺口詳見 `entries/home/AGENT.md`——撰寫當下 dev 環境未啟動，全文僅依原始碼撰寫） |
 | 結帳 | `/checkout` | ✅ 已撰寫主線 + 功能選單，其餘（美容模式、促銷/退貨/換購/外送/報表/暫結等）待補 |
 | 美容結帳摘要 | `/salon-summary` | 待補（複雜度等同 `/summary`，重用其付款元件，留待與 `/summary` 一起處理） |
-| 顧客顯示螢幕 | `/customer-display` | ✅ 本次已撰寫 |
+| 顧客顯示螢幕 | `/customer-display` | ✅ 已撰寫（runtime 驗證缺口詳見 `entries/customer-display/AGENT.md`——撰寫當下 dev 環境未啟動，全文僅依原始碼撰寫） |
 | 結帳摘要 | `/summary` | 待補 |
-| 列印預覽 | `/print-preview` | ✅ 本次已撰寫（runtime 驗證缺口詳見 `entries/print-preview/AGENT.md`） |
+| 列印預覽 | `/print-preview` | ✅ 已撰寫（runtime 驗證缺口詳見 `entries/print-preview/AGENT.md`） |
 
 **注意**：`sidemenu`（`next/app/sidemenu/`）不是獨立路由，底下沒有 `page.tsx`；
 `pos-menu-drawer` 是渲染在 `/checkout` 內的功能選單抽屜，其操作說明收在

@@ -2,13 +2,14 @@
 
 > 來源：原始碼（`next/app/customer-display/page.tsx`、`components/payment-screen.tsx`、
 > `components/completed-screen.tsx`、`components/member-info-card.tsx`、
-> `components/invoice-section.tsx`、`lib/customer-display/build-snapshot.ts`、
-> `lib/customer-display/use-customer-display-sync.ts`）+ E2E Page Object
+> `components/invoice-section.tsx`、`next/lib/customer-display/build-snapshot.ts`、
+> `next/lib/customer-display/use-customer-display-sync.ts`）+ E2E Page Object
 > （`test/e2e/pages/customer-display-screen-page.ts`）。
 > ⚠️ 尚未經 runtime 畫面驗證（撰寫當下 Ragdoll dev 環境未啟動，
-> `list_electron_windows` 回報找不到任何視窗；即使 dev 環境啟動，完整驗證
-> 「已收合計」「結帳完成」等欄位仍需實際刷卡機/現金設備配合送出付款，故本文件
-> 全篇皆僅依原始碼撰寫）。
+> `list_electron_windows` 回報找不到任何視窗）。`PaymentScreen` 可由點擊
+> 小計、進入促銷結算對話框驗證，不需要實體設備；`CompletedScreen`（結帳
+> 完成）需實際送出付款才能觸發，完整驗證「已收合計」「結帳完成」等欄位仍需
+> 實際刷卡機/現金設備配合送出付款，故本文件全篇皆僅依原始碼撰寫。
 
 ## 適用情境
 
@@ -26,7 +27,7 @@
    `ShoppingScreen`。
 2. **Completed**：購物車與會員皆已清空（結帳完成後系統清空）、結帳完成展示
    旗標為真時觸發，8 秒後由主視窗計時器自動重置，二顯隨之切回 `IdleScreen`；
-   此後的實際刷卡機/現金收款畫面本次手冊未涵蓋，超出
+   實際刷卡機/現金收款環節（發生在此之前）本次手冊未涵蓋，超出
    `04-checkout-and-payment.md` 範圍。
 
 ## 系統驗證行為（⚠️ 尚未實機驗證，依原始碼描述）
@@ -68,6 +69,7 @@
   階段 store 的完成快照，該快照必須在購物車被清空「之前」完成，避免讀到
   清空後的狀態；此為主視窗端的實作細節，本文件僅記錄其對客顯畫面資料正確性
   的影響。
-- 付款中／結帳完成兩個畫面因需要實際刷卡機/現金設備配合送出付款才能觸發，
+- 結帳完成畫面需實際送出付款才能觸發，需要實際刷卡機/現金設備配合才能完整
+  驗證；付款中畫面可由點擊小計、進入促銷結算對話框驗證，不需要實體設備。
   本文件所有畫面內容描述皆為僅依原始碼撰寫、尚未經 runtime 驗證，需在下次
-  有 Ragdoll dev 環境啟動且能操作實機設備的 session 補做。
+  有 Ragdoll dev 環境啟動的 session 補做（結帳完成畫面另需能操作實機設備）。
