@@ -17,7 +17,7 @@ Ragdoll 是寵物店 POS 系統的下一代版本（Next.js + Electron），實�
 | 美容結帳摘要 | `/salon-summary` | 待補（複雜度等同 `/summary`，重用其付款元件，留待與 `/summary` 一起處理） |
 | 顧客顯示螢幕 | `/customer-display` | ✅ 本次已撰寫 |
 | 結帳摘要 | `/summary` | 待補 |
-| 列印預覽 | `/print-preview` | ✅ 本次已撰寫（若 Task 3 runtime 驗證受限，於 `entries/print-preview/AGENT.md` 內註明缺口） |
+| 列印預覽 | `/print-preview` | ✅ 本次已撰寫（runtime 驗證缺口詳見 `entries/print-preview/AGENT.md`） |
 
 **注意**：`sidemenu`（`next/app/sidemenu/`）不是獨立路由，底下沒有 `page.tsx`；
 `pos-menu-drawer` 是渲染在 `/checkout` 內的功能選單抽屜，其操作說明收在
