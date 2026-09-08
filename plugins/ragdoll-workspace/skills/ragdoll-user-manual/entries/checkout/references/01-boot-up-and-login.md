@@ -11,8 +11,10 @@
 
 ## 操作步驟
 
-1. 應用程式啟動後先看到根路由 `/`（極簡導航頁，見 `entries/home/AGENT.md`），
-   點擊「開始結帳」按鈕才會進入 `/checkout`。
+1. 應用程式啟動後主視窗直接載入 `/checkout`（`electron/main/main.ts` 的
+   entryURL 固定為 `<base>/checkout`），不會經過根路由 `/`（可參考
+   `entries/home/AGENT.md` 了解 `/` 這個路由本身的性質，但實際開機流程不會
+   途經它）。
 2. 未登入時，頂欄 `SalerLogin` 顯示唯讀輸入框（`data-testid="saler-input"`，
    placeholder「輸入員編」）。點擊輸入框會開啟數字鍵盤 Popover
    （`data-testid="saler-keypad-popover"`）。
