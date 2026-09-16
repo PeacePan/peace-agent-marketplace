@@ -151,7 +151,7 @@ description: 把一個粗略需求、大型工作（Epic）或技術設計文件
 ### 討論紀錄（customfield_10266）
 
 - **讀者**：工程師
-- **格式**：ADF `bulletList`（一般項目符號）
+- **格式**：一律用 ADF `expand` 節點包住（`attrs.title` 標明主題），內容放 `bulletList`、`paragraph`、`codeBlock` 等區塊皆可；卡片預設收合、避免拉長版面，讀者需要時才點開。範本見下方「ADF 範本」段落
 - **內容**：路徑命名、技術選型、middleware 結構、第三方串接演算法、相依套件、SDK 版本、測試策略、需與其他角色對齊的細節
 - **目的**：工程師動手前的技術備忘錄，PM/QA 看不懂沒關係
 
@@ -194,7 +194,7 @@ Optimization 必填 `customfield_10066`，但截至 2026-07 選單中**沒有 Ra
 | 描述 | `description` | 給所有人的目的說明 | markdown 或 ADF |
 | 規格 | `customfield_10057` | 數字編號條列 | **必須 ADF**，用 orderedList |
 | 驗收條件 | `customfield_10030` | checkbox 步驟 | **必須 ADF**，用 taskList |
-| 討論紀錄 | `customfield_10266` | 工程細節 | **必須 ADF**，用 bulletList |
+| 討論紀錄 | `customfield_10266` | 工程細節 | **必須 ADF**，一律用 `expand` 包住 |
 | Parent | `parent` | 所屬 Epic key | 字串如 `RD-7600` |
 
 **關鍵踩雷**：customfield 欄位拒收 markdown 字串，**必須是 ADF 物件**（`{type: 'doc', version: 1, content: [...]}`）。description 欄則接受 markdown（透過 `contentFormat: 'markdown'`）。
@@ -248,7 +248,9 @@ Optimization 必填 `customfield_10066`，但截至 2026-07 選單中**沒有 Ra
 
 **注意**：`localId` 必須唯一，建議用 `ac-<票號>-<序號>` 命名規則避免衝突。`state` 一律是 `"TODO"`，由 QA 在 Jira UI 上勾選改為 `"DONE"`。
 
-#### 討論紀錄欄（bulletList）
+#### 討論紀錄欄（expand 包住，一律使用）
+
+`expand` 是 ADF 區塊節點，`attrs.title` 標明收合標題，`content` 放任意數量的區塊內容（段落、清單、程式碼區塊皆可）。討論紀錄**一律**用它包住，讓卡片預設收合、需要時才展開，不因內容長短而定。最常見的內容是技術備忘的 `bulletList`：
 
 ```json
 {
@@ -256,15 +258,57 @@ Optimization 必填 `customfield_10066`，但截至 2026-07 選單中**沒有 Ra
   "version": 1,
   "content": [
     {
-      "type": "bulletList",
+      "type": "expand",
+      "attrs": {"title": "討論紀錄"},
       "content": [
-        {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "技術細節 1"}]}]},
-        {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "技術細節 2"}]}]}
+        {
+          "type": "bulletList",
+          "content": [
+            {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "技術細節 1"}]}]},
+            {"type": "listItem", "content": [{"type": "paragraph", "content": [{"type": "text", "text": "技術細節 2"}]}]}
+          ]
+        }
       ]
     }
   ]
 }
 ```
+
+若內容是根因分析、trace log 這類需要段落與程式碼片段交錯的敘述，`expand.content` 換成 `paragraph` / `codeBlock` 即可，結構不變。以下範例取自 RD-8217 的根因分析：
+
+```json
+{
+  "type": "doc",
+  "version": 1,
+  "content": [
+    {
+      "type": "expand",
+      "attrs": {"title": "問題根因"},
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [{"type": "text", "text": "Ragdoll 結帳列印發票時，夢時代／宏匯商場條碼金額只扣除「有 promotionName 對應的商品促銷折扣」，沒有涵蓋整單折扣、折扣碼、會員點數折抵這三類折扣。"}]
+        },
+        {
+          "type": "paragraph",
+          "content": [{"type": "text", "text": "根因在 shared/utils/mall-barcode.ts 的 computeItemNetValues()："}]
+        },
+        {
+          "type": "codeBlock",
+          "attrs": {"language": "typescript"},
+          "content": [{"type": "text", "text": "for (const promotion of promotions) {\n  if (!promotion.promotionName) continue; // 整單折扣/折扣碼/點數折抵在此被跳過\n  ...\n}"}]
+        },
+        {
+          "type": "paragraph",
+          "content": [{"type": "text", "text": "Maltese 沒有此問題，因為印條碼時用的是伺服端已完整攤算（含所有折扣類型）的金額；Ragdoll 因離線優先架構，只能在本地近似計算。"}]
+        }
+      ]
+    }
+  ]
+}
+```
+
+**注意**：`attrs.title` 用一句話標明收合內容主題，方便讀者判斷要不要點開；一張卡可以有多個 `expand`，各自標題不同、各自收合。
 
 ### 建立流程
 
