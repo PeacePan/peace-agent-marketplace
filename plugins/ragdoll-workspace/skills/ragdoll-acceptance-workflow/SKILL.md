@@ -29,6 +29,42 @@ description: >
 
 四項全部通過才進入 Step 0b。
 
+**已實測案例——委派給 subagent 時的工具授權落差：** 委派給
+`ragdoll-workspace:ragdoll-acceptance-qa` agent 執行本 SOP 時，該次呼叫實際
+拿到的工具只有 `Read`／`Skill`／`SubagentHandback`，完全不含本表任何一項
+MCP 工具，Step 0a 連第一項都跑不完就必須停止回報。這不是「未安裝」也不是
+「Ragdoll 未啟動」，是這次委派時 subagent 被授權的工具範圍比 agent 定義文件
+描述的更嚴格。**MUST** 遇到這種情況時：不要重試同一次委派、不要嘗試幫
+subagent 擴權，改為**由 orchestrator 自己的 session 直接接手執行整套 SOP**
+（前提是 orchestrator 自己的工具清單裡確實有這些 MCP 工具，可用
+`ToolSearch` 確認）。
+
+**補充：Ragdoll 尚未啟動時，先確認要跑的是哪個分支，再啟動。** Step 0a 的
+`ragdoll-electron` 檢查若回報「Ragdoll 尚未啟動」，在執行 `npm run dev` 之前
+MUST 先確認分支，不是隨便啟動目前 checkout 到的任何分支：
+
+1. 查 Jira `customfield_10033`（分支名稱）取得這次修復的分支名。
+2. 查該分支對應的 PR 確認 `state`／`base`：
+   - PR 已 merge 進 `release/ragdoll` 或已被 cascade 到 `train/ragdoll-next`
+     → 可以直接在既有 checkout 上驗收，不需要另建 worktree。
+   - **PR 仍是 `open`**（已實測 base 為 `train/ragdoll-next`，尚未
+     merge）→ 修復內容只存在於這個 PR 分支本身，**MUST** checkout 這個分支
+     才驗收得到，驗收 `train/ragdoll-next` 目前狀態驗不到任何修復。
+3. checkout 既有遠端分支時 **MUST NOT** 用 `EnterWorktree({name})`——那只會
+   從 HEAD/預設分支**新建**分支，無法 checkout 已存在的遠端分支。改為手動：
+   ```bash
+   git fetch origin <分支名稱>
+   git worktree add .claude/worktrees/<自訂名稱> <分支名稱>
+   ```
+   建好後再用 `EnterWorktree({path: "<上面那個路徑>"})` 把 session 切進去做
+   隔離（這個呼叫方式沒有「只能新建分支」的限制）。
+4. worktree 需要**真實 `npm ci`**（Turbopack 建置會拒絕 symlink 的
+   `node_modules`），首次安裝視網路狀況要數分鐘，用 `run_in_background`
+   執行、以背景輪詢 log 確認完成，不要用 `sleep` 卡住整個 turn。
+5. `npm run dev` 同樣背景執行，起手前先 `pwd` 確認目前 shell 所在目錄——如果
+   前一個指令已把 session cwd 切到 `Ragdoll/` 目錄下，再下一次
+   `cd Ragdoll && npm run dev` 會因路徑不存在直接失敗（已實測踩過）。
+
 **選用依賴（缺少不擋流程，只在需要時才會用到）：**
 
 - `ragdoll-workspace:ragdoll-user-manual` skill **實測目前不存在**（曾嘗試載入
@@ -203,9 +239,18 @@ mcp__claude_ai_Atlassian__getJiraIssue(
 「純函式論證法」與「補充查核」都需要以此為根據，光靠 Jira 描述或操作手冊猜測
 運作方式，遇到不容易操作重現的邊界情境會判斷不出結果，也難以自信地給出結論。
 
-1. 找出這次修復所在的分支與其對應的 base（通常是 `merge-base <base> HEAD`），
-   跑 `git diff <base>..HEAD --stat` 看改了哪些檔案，再對每個核心邏輯檔案跑
-   單檔 diff 細看。
+1. 找出這次修復所在的分支，**先算出真正的分支點再比較，不要直接對 base
+   分支目前的狀態跑 diff**：
+   ```bash
+   git merge-base origin/<base 分支> HEAD   # 例：origin/train/ragdoll-next
+   git diff <merge-base 結果>..HEAD --stat
+   ```
+   看改了哪些檔案，再對每個核心邏輯檔案跑單檔 diff 細看。`train/ragdoll-next`
+   這類班車分支會不斷有其他 PR 合併進去，若直接跑
+   `git diff origin/train/ragdoll-next..HEAD`，會混入大量與本次修復完全無關
+   的檔案（已實測：naive diff 混入十幾個不相關檔案，看起來像修復
+   範圍暴增）。跑完 `merge-base` 版本後，變動檔案數應與 PR description 的
+   「調整內容」表格吻合，才是正確的比較基準。
 2. 找出**共用的核心函式**：Ragdoll 的修復常常會抽出一支共用的純函式（例如
    `applyXxxToYyy(items, someState)`），被多個呼叫端（一般流程、暫結還原、
    換購、優惠券回滾……）共同呼叫。找到這支函式，理解它的輸入輸出契約，比
@@ -269,8 +314,17 @@ mcp__claude_ai_Atlassian__getJiraIssue(
   是 `{民國年3碼}{結束月份2碼}{發票號碼10碼}{來源末4碼}`（結束月份是雙月配號
   期別的月份，公式邏輯見 `next/lib/utils/invoice/egui-period.ts` 的
   `getEGUIPeriod` 與 `invoice-verify-panel.tsx`），不是把發票號碼原文送出就
-  能過。本地 `issue_invoice` 表可查到 `egui_no`，`offline_sale.name`（或
-  `offlineReferenceName`）取末 4 碼當「來源末 4 碼」。
+  能過。本地 `issue_invoice` 表可查到 `egui_no`。
+  **「來源末 4 碼」的 saleName 不是固定抓本地 `offline_sale.name`**——它是
+  UI 元件當下渲染這筆單據時拿到的 `sale.body.name`：透過「商品/銷售查詢
+  (退換貨)」或「美容銷售查詢」對話框查到的單子，資料來源是**遠端 GraphQL**
+  （`PosSaleRecord`），`body.name` 對應的是**中台編號**（畫面上「銷售編號」
+  欄位顯示的值，例如 `0032609100003`），跟本地 `offline_sale.name`
+  （`S260910174454643` 這種格式）是兩組不同字串，取末 4 碼算出來的候選碼也
+  不同。已實測：優先用本地 `offline_sale.name` 末 4 碼驗證失敗，改用
+  畫面上顯示的「銷售編號」末 4 碼才驗證成功。**保險做法**：組碼前用截圖或
+  `electron_get_page_structure` 確認畫面上實際顯示的「銷售編號」欄位值，直接
+  拿那組數字的末 4 碼，不要憑本地 SQL 查詢結果推算。
 - **`ragdoll-electron` MCP 工具的已知眉角**：
   - Radix `DropdownMenu` / `Popover` 觸發鈕用 `electron_click_by_text` 點擊
     時，實測經常在同一次呼叫內被判定成「點了又點到外部」而立刻關閉，導致
@@ -290,6 +344,66 @@ mcp__claude_ai_Atlassian__getJiraIssue(
     「查詢」按鈕）時，`electron_click_by_text` 可能命中錯的元素。優先用
     `electron_fill_input` 鎖定該欄位、搭配 `electron_press_key(Enter)` 在該
     輸入框內送出，避免依賴按鈕文字比對。
+  - **同一畫面疊了多層 Dialog、且文字相同的按鈕（如「退貨」）分別出現在不同
+    層時，`electron_click_by_text` 可能命中背景那層而非目前作用中的那層**，
+    且呼叫結果仍回報「成功點擊」不會報錯，很容易誤判成流程已送出、實際上
+    什麼都沒發生（已實測：查 DB 發現資料根本沒寫入才發現點錯層）。
+    保險做法：改用 `electron_eval` 直接沿 DOM 結構定位（例如「緊接在金額
+    輸入框旁邊的那顆紅色按鈕」），不要單純比對文字。**`electron_eval` 的
+    安全掃描器會擋下任何含 `=` 字元的程式碼**（連 CSS attribute selector
+    如 `input[type="number"]` 都會被誤判成賦值操作而擋下），要改用不含 `=`
+    的寫法，例如：
+    ```js
+    document.getElementsByTagName('input')[4].parentElement.getElementsByClassName('bg-destructive')[0].click()
+    ```
+    用陣列索引取代 attribute selector、只用 `.click()` 這類無賦值語句。
+  - **數字鍵盤（登入員編、機台代號輸入）如果在同一次工具呼叫裡連續塞多個
+    `electron_click_by_text` 按鍵，會被防連點機制擋下大半**（回報
+    `Element click prevented - too soon after previous click`，只有第一個
+    生效）。逐位數字 MUST 拆成一次一個獨立呼叫，不要批次塞在同一個 message
+    裡送出。
+  - **日期範圍選擇器是 shadcn `Calendar` popover，不是純文字輸入框**：點擊
+    日期文字按鈕開啟月曆後，用 `electron_click_by_selector` 點
+    `button.rdp-button_previous` / `.rdp-button_next` 切換月份，再用
+    `electron_click_by_text` 點日期數字。
+- **需要「跨發票配號週期」的測試情境時，不要竄改系統時間，改查本地 DB 找現成
+  的舊期別資料**：
+  ```sql
+  SELECT name, issue_invoice_name, paid_at, total FROM offline_sale
+  WHERE invoice_type = 'EGUI' AND issue_invoice_name IS NOT NULL
+  ORDER BY paid_at ASC LIMIT 10
+  ```
+  找一筆 `paid_at` 落在兩個雙月期別之前的已完成銷售單，直接對它操作退貨即可
+  自然觸發跨週期折讓邏輯，不需要動系統時鐘或竄改資料。
+- **「商品」與「美容」的退換貨查詢是兩個完全獨立的對話框與 store**：商品側
+  入口是功能選單「商品」頁籤的「銷售查詢(退換貨)」
+  （`useReturnExchangeStore`），美容側要先切到功能選單「美容」頁籤才會出現
+  獨立的「銷售查詢(退換貨)」入口（`useSalonReturnExchangeStore`）。**這兩個
+  對話框不會依原始銷售單的 `sale_kind` 自動分派**——若在「商品」入口對一筆
+  `sale_kind = 'SERVICE'` 的美容銷售單退貨，但退的剛好是該單裡搭賣的實體
+  商品明細行，寫入的 `offline_return.sale_kind` 會是 `'ITEM'`，**不會**走到
+  美容側的 `resolveOfflineReturnName` 呼叫路徑（已實測踩過一次）。
+  要驗證美容側邏輯，MUST 先確認要退的單子是**純服務項目**（可用 SQL 查
+  `(SELECT COUNT(*) FROM offline_sale_lines_items WHERE offline_sale_name = s.name)`
+  是否為 0，排除混雜商品加購的單），並從「美容」頁籤的入口進入。
+- **觸發任何實體列印流程（折讓證明單、發票、小白單……）在沒有連接實體 POS
+  印表機的本機 macOS 開發環境下，會讓整個 renderer 的 JS event loop 凍結**
+  （`electron_take_screenshot`／`electron_eval` 的 CDP `Runtime.evaluate`
+  全部逾時），且**單獨 kill 列印用的 utility 子程序（
+  `printing.mojom.UnsandboxedPrintBackendHost`）救不回來**，因為卡住的是
+  原生系統列印對話框，不在 CDP 可控範圍。已實測的唯一解法：整個 kill 掉
+  Electron 主程序重啟：
+  ```bash
+  pkill -9 -f "electron/dist/electron/main/main.js"
+  ```
+  重啟後常見 `next dev` 殘留佔用 3100 埠（`EADDRINUSE`），重跑
+  `npm run dev` 前先 `lsof -ti:3100` 找出殘留的 `next-server` 行程 kill 掉。
+  **實務上最好的因應方式是提前避開**：只要驗收條件不是明確要求「確認列印
+  出的紙本內容」，優先用 SQL 查資料庫本身的欄位值（如 `credit_note_no`／
+  `credit_note_id`）驗證邏輯正確性，不要點會觸發列印的「確認完成」之類
+  按鈕；真的需要驗證紙本格式時，改用程式碼追蹤鏈（讀版面組裝函式，確認
+  欄位值是否原樣輸出無格式化）取代實際觸發列印，並在報告中如實標註是用
+  程式碼論證而非肉眼比對紙本。
 - **涉及正式環境（production）的驗收條件**：Claude Code 的自動模式分類器會
   直接擋下對 production 的查詢/寫入動作（不論是透過 `javacat_switch_environment
   (env: "production")` 還是其他工具），這是平台層級的安全政策，**不是**工具
@@ -373,12 +487,26 @@ orchestrator 詢問使用者是否同意留言、同意後才由 orchestrator �
 清掉——使用者可能還要接著人工複查畫面。
 
 1. 停止背景執行的 `npm run dev`（用 `TaskStop` 停掉對應的背景任務），並用
-   `ps aux` 確認沒有殘留綁定該 worktree 路徑的 Electron/Next 程序（`npm run
-   dev` 的子程序有時不會隨父殼一起結束）。
-2. 若驗收環境是透過 `EnterWorktree` 建立的獨立 worktree：先確認裡面沒有你
-   自己產生的未推送內容——比對 worktree 目前 HEAD 與遠端對應分支
-   （`origin/<branch>`）的 commit hash 是否**完全一致**。一致才代表這個
-   worktree 除了 checkout 既有分支之外沒有任何屬於這次驗收工作自己產生的
-   東西，可以安全用 `ExitWorktree(action: "remove", discard_changes: true)`
-   清除。若不一致（有你自己的 commit 或未提交變更），改用
-   `action: "keep"` 並明確告知使用者 worktree 路徑，不要自行決定丟棄。
+   `pkill -9 -f "electron/dist/electron/main/main.js"` /
+   `pkill -9 -f "next dev -p 3100"` 等指令確認沒有殘留綁定該 worktree 路徑的
+   Electron/Next 程序（`npm run dev` 的子程序有時不會隨父殼一起結束，`ps aux`
+   grep worktree 路徑二次確認）。
+2. 先確認 worktree 裡沒有你自己產生的未推送內容——比對 worktree 目前 HEAD 與
+   遠端對應分支（`origin/<branch>`，`git fetch` 後 `git rev-parse` 比對）的
+   commit hash 是否**完全一致**。一致才代表這個 worktree 除了 checkout 既有
+   分支之外沒有任何屬於這次驗收工作自己產生的東西，可以安全清除；不一致（有
+   你自己的 commit 或未提交變更）就不要清除，明確告知使用者 worktree 路徑。
+3. **清除方式依 Step 0a 用哪種方式建立這個 worktree 而不同**：
+   - 若是用 `EnterWorktree({name})` 新建分支建立 → 用
+     `ExitWorktree(action: "remove", discard_changes: true)` 即可。
+   - **若是依 Step 0a「補充」段落用手動 `git worktree add` + 再
+     `EnterWorktree({path})` 進入的既有分支**（已實測案例，PR
+     仍是 open 狀態時的標準做法）→ `ExitWorktree(action: "remove")`
+     **會被拒絕**，錯誤訊息是「This session is not the owner of the
+     worktree」，因為該工具的移除權限只認自己用 `{name}` 建立的 worktree。
+     正確流程：先 `ExitWorktree(action: "keep")` 讓 session 退回原本的
+     working directory，再手動執行：
+     ```bash
+     git worktree remove .claude/worktrees/<自訂名稱>
+     git branch -d <分支名稱>   # 順手清掉本機追蹤分支（沒有額外 commit 時安全）
+     ```
