@@ -17,7 +17,7 @@
 1. 手動輸入網址抵達 `/` 首頁：標題「萬達寵物 POS 桌面版」+ 兩個並排
    按鈕。
 2. 點擊「開始結帳」按鈕會導向 `/checkout`（見 `entries/checkout/AGENT.md`）。
-3. 點擊「訂單查詢」按鈕會導向 `/summary`（`/summary` 頁面本身尚未撰寫手冊，
+3. 點擊「訂單查詢」按鈕會導向 `/summary`（頁面內容見 `entries/summary/AGENT.md`；
    見下方「系統驗證行為」的已知限制）。
 
 ## 系統驗證行為

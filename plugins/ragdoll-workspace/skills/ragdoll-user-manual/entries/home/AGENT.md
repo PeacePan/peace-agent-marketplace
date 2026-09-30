@@ -39,9 +39,9 @@
 | 訂單查詢 | 外框（`variant="outline"`） | `/summary` |
 
 兩個按鈕都是 Next.js `<Link>` 純前端路由跳轉，原始碼未見任何 disabled 條件、
-loading 狀態或前置 API 呼叫。「訂單查詢」點擊後會跳轉到 `/summary`，`/summary`
-本身尚未撰寫手冊，此處只描述「點擊後會跳轉到 `/summary`」這個導航行為本身，
-不描述 `/summary` 頁面內容。
+loading 狀態或前置 API 呼叫。「訂單查詢」點擊後會跳轉到 `/summary`，此處只描述
+「點擊後會跳轉到 `/summary`」這個導航行為本身；`/summary` 頁面內容見
+`entries/summary/AGENT.md`（它其實是結帳流程的付款確認頁，購物車為空時會立刻被導回 `/checkout`）。
 
 ---
 

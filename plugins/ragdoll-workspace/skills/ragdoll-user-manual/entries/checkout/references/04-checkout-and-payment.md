@@ -41,6 +41,9 @@
 
 ## 注意事項
 
+- 小計之後的「加購與贈品」彈窗、「促銷結算對話框」本次手冊仍列為待補；按下促銷結算對話框的
+  「確認結帳」之後進入的付款頁見 `entries/summary/AGENT.md`（商品模式）與
+  `entries/salon-summary/AGENT.md`（美容模式）。
 - 美容模式（超出本次範圍）的小計按鈕邏輯不同：依 `useSalonOnlineGate` 離線時
   disabled，且點擊交由父層 `onSalonSubtotal` 處理。
 - 促銷/折扣/加購/贈品的計算與畫面（小計之後的流程）本次手冊未涵蓋，涉及這些
