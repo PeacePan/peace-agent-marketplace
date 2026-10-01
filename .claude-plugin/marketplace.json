@@ -21,6 +21,11 @@
       "description": "Ragdoll 專案開發專用工具包"
     },
     {
+      "name": "utonagan-workspace",
+      "source": "./plugins/utonagan-workspace",
+      "description": "Utonagan 專案開發專用工具包"
+    },
+    {
       "name": "wonderpet-general",
       "source": "./plugins/wonderpet-general",
       "description": "萬達寵物通用 AI 工具包"

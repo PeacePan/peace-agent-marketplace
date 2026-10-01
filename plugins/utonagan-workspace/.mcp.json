@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "utonagan-playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.83", "--isolated", "--headless"]
+    }
+  }
+}
