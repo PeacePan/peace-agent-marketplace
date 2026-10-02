@@ -1,7 +1,7 @@
 ---
 name: utonagan-acceptance-qa
 description: 對 Utonagan（店系統）範圍（Jira Epic RD-7599）內的單一 ticket 做實機驗收（非自動化測試）。使用者指定一張 ticket 卡號後，依序做依賴檢查、前置狀態檢查、確認父系 Epic 是否為 RD-7599、讀取驗收條件、在真實啟動的 Utonagan dev server 上用瀏覽器實際操作驗證，最後逐條回報通過、不通過或無法驗證，並附留言草稿。不寫入 Jira，不修正原始碼。
-model: sonnet
+model: claude-sonnet-5.5
 color: blue
 skills:
     - utonagan-workspace:utonagan-acceptance-workflow

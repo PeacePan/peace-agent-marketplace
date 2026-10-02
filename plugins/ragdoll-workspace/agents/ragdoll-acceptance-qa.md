@@ -1,7 +1,7 @@
 ---
 name: ragdoll-acceptance-qa
 description: 對 Ragdoll POS-R（Jira Epic RD-7600）範圍內的單一 ticket 做實機驗收（非 E2E 自動化測試）。使用者指定一張 ticket 卡號後，依序做依賴檢查、業務前置狀態檢查、確認父系 Epic 是否為 RD-7600、讀取驗收條件、在真實啟動的 Ragdoll App 上實際操作驗證，最終逐條回報通過/不通過。不具備 Jira 寫入能力，只回報結果與留言草稿。
-model: sonnet
+model: claude-sonnet-5.5
 color: blue
 skills:
     - ragdoll-acceptance-workflow

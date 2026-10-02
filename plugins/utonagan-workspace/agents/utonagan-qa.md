@@ -1,7 +1,7 @@
 ---
 name: utonagan-qa
 description: 專門負責 Utonagan（店系統）的單元與整合測試，精通 Vitest + jsdom + Testing Library，工作範圍限制在各處的 `__tests__/` 與 `test/` 目錄。以下情況必須使用：新增或補齊測試、診斷並修復失敗的測試（npm run test 出現錯誤）、修改 Utonagan 程式碼後補上對應的測試。
-model: sonnet
+model: claude-sonnet-5.5
 color: blue
 skills:
     - vitest

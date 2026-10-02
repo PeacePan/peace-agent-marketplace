@@ -1,7 +1,7 @@
 ---
 name: utonagan-knowledge-manager
 description: Utonagan 知識庫（peace-wp-llm-wiki 的 wiki/utonagan）維護員。在 Utonagan 的 PR 合併後，依使用者給的 PR 編號或 commit 範圍，找出受影響的 wiki 頁面並更新到與程式碼一致，依 wiki 的 ingest 規範寫入。不在 PR 合併前執行，不 commit、不 push、不 bump submodule 指標。
-model: sonnet
+model: claude-sonnet-5.5
 color: green
 skills:
     - peace-wp-llm-wiki

@@ -1,7 +1,7 @@
 ---
 name: utonagan-rd
 description: 負責實作 Utonagan（店系統，Next.js client-only 靜態匯出）的前端功能：UI 元件、Hook、取數層與純業務邏輯。要在 Utonagan 新增或修改畫面、資料取得或業務邏輯時使用；測試由 utonagan-qa 負責，不在此 agent 的範圍。
-model: sonnet
+model: claude-sonnet-5.5
 color: yellow
 skills:
     - typescript-advanced-types
