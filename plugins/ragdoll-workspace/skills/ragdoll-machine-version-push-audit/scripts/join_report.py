@@ -2,6 +2,8 @@
 """
 合併「門市機台檔／機台版本資訊／裝置推播管理檔」三份清單，產出 Ragdoll 機台稽核報告。
 
+沒有 python3 的環境改用同目錄的 join_report.mjs（Node 版），兩支輸出必須一致；修改邏輯時請兩支一起改，並用同一批資料比對輸出。
+
 為什麼要用腳本：三張表各有數百列，必須以「收銀機編號（5 碼＝門市 3 碼＋機台 2 碼）」逐台對應。
 人工在對話裡比對幾百列容易漏列或錯列；腳本做 join 才能保證每一台機台都被檢查到。
 
@@ -21,6 +23,7 @@
 """
 import argparse
 import csv
+import math
 import re
 import sys
 from collections import Counter, defaultdict
@@ -38,6 +41,14 @@ def parse_time(text):
         return datetime.fromisoformat(text.replace('Z', '+00:00')).astimezone(timezone.utc)
     except ValueError:
         return None
+
+
+def round_half_up(value):
+    """
+    四捨五入到小數 1 位（平手時進位）。刻意不用內建 round()：它是銀行家捨入（17.25 → 17.2），
+    與 Node 版的 toFixed 不同；兩支腳本改用同一個演算法，才能保證輸出逐位元一致。
+    """
+    return math.floor(value * 10 + 0.5) / 10
 
 
 def version_key(text):
@@ -136,7 +147,7 @@ def main():
             'version': latest[1] if latest else '',
             'commit': latest[2] if latest else '',
             'lastEnterAt': latest[0].strftime('%Y-%m-%dT%H:%M:%SZ') if latest else '',
-            'ageDays': round(age_days, 1) if age_days is not None else '',
+            'ageDays': round_half_up(age_days) if age_days is not None else '',
             'stale': bool(latest) and latest[0] < cutoff,
             'rolledBack': rolled_back,
             'deviceRows': rows,
@@ -162,7 +173,7 @@ def main():
     behind = [d for d in with_version if version_key(d['version']) < top] if top else []
 
     def pct(part):
-        return f'{part / total * 100:.1f}%' if total else '-'
+        return f'{round_half_up(part / total * 100):.1f}%' if total else '-'
 
     out = []
     out.append(f'# Ragdoll 機台稽核報告（資料時間基準 {now.strftime("%Y-%m-%d %H:%M")} UTC）')
@@ -185,7 +196,7 @@ def main():
     version_count = Counter((d['version'], d['commit']) for d in with_version)
     if version_count:
         out.append('| 版本 | commit | 台數 | 占比 | 備註 |\n|---|---|---|---|---|')
-        for (ver, commit), cnt in sorted(version_count.items(), key=lambda kv: (version_key(kv[0][0]), -kv[1]), reverse=True):
+        for (ver, commit), cnt in sorted(version_count.items(), key=lambda kv: (version_key(kv[0][0]), kv[1]), reverse=True):
             note = '目前最高版' if version_key(ver) == top else ''
             out.append(f'| {ver} | {commit} | {cnt} | {pct(cnt)} | {note} |')
         if no_version:
@@ -256,7 +267,8 @@ def main():
         with open(args.csv, 'w', newline='', encoding='utf-8-sig') as handle:
             writer = csv.DictWriter(handle, fieldnames=list(details[0].keys()) if details else ['name'])
             writer.writeheader()
-            writer.writerows(details)
+            for d in details:
+                writer.writerow({k: str(v).lower() if isinstance(v, bool) else v for k, v in d.items()})
 
 
 if __name__ == '__main__':

@@ -116,10 +116,19 @@ description: >
 ### Step 5：合併成報告（腳本）
 
 ```bash
-python3 -I <本 skill 目錄>/scripts/join_report.py \
-  --configs "$W/configs.txt" --versions "$W/versions.txt" --devices "$W/devices.txt" \
-  [--devices-fcm "$W/devices-fcm.txt"] --now "<現在 ISO 時間>" --csv "$W/ragdoll-machines.csv"
+SK="<本 skill 目錄>/scripts"
+ARGS=(--configs "$W/configs.txt" --versions "$W/versions.txt" --devices "$W/devices.txt"
+      --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --csv "$W/ragdoll-machines.csv")
+# 有 devices-fcm.txt 時另加：ARGS+=(--devices-fcm "$W/devices-fcm.txt")
+if python3 --version >/dev/null 2>&1; then
+  python3 -I "$SK/join_report.py" "${ARGS[@]}"
+else
+  node "$SK/join_report.mjs" "${ARGS[@]}"
+fi
 ```
+
+優先用 Python 版，沒有 python3 才退回 Node 版（需 Node 18 以上）。兩支腳本邏輯與輸出一致，只是語言不同。
+偵測用 `python3 --version` 而不是 `command -v python3`：Windows 上的 `python3` 常是會開啟 Microsoft Store 的空殼，`command -v` 會誤判成已安裝。
 
 腳本逐台檢查 `configs.txt` 內的每一台，輸出：總覽（含機型組成）、版本分佈、以及這些需要關注的機台——
 3.1 無版本紀錄、3.2 落後最高版（依版本分組）、3.3 未上報、3.4 未登入推播、3.5 疑似降版、3.6 裝置紀錄重複、
