@@ -1,0 +1,74 @@
+<!--
+  晨會工作報告 HTML 骨架。把 {{...}} 換成實際內容，重複區塊（<tr>、<li>）依需要增減，沒內容的小節整段刪掉。
+  這份檔案只是結構範本；實際送出前要移除所有 HTML 註解與未替換的 {{...}}。
+  Google 文件匯入 HTML 只認行內樣式，不要改用 <style> 區塊。
+-->
+<html><head><meta charset="utf-8"><title>晨會工作總結 {{晨會日 YYYY/MM/DD}}</title></head><body>
+<h1>晨會工作總結</h1>
+<p style="color:#595959">工作日期：{{YYYY/MM/DD（週X）；週一晨會列出週五～週日}}　晨會日期：{{YYYY/MM/DD（週X）}}<br>報告人：{{姓名}}（{{部門與職稱}}）</p>
+
+<h2>一、1 分鐘口頭稿</h2>
+<table border="0" cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse"><tr><td style="background-color:#F2F5FA;border-left:4px solid #2F5496">
+<p>{{口頭稿第一句：昨天主要做什麼}}</p>
+<p>{{完成的事}}</p>
+<p>{{進行中的事與狀態}}</p>
+<p>{{協助他人的事}}</p>
+<p>{{需要排人或決策的事}}</p>
+</td></tr></table>
+<p style="color:#595959;font-size:10pt">時間夠再加：{{不影響別人的雜務、推算性質的資訊}}</p>
+
+<h2>二、整體摘要</h2>
+<ul>
+<li>開發與交付：{{推進幾項、哪幾項、哪些尚未提交}}</li>
+<li>合併 PR：{{幾個自己的 PR、另處理幾筆自動版更 PR}}</li>
+<li>新開 PR：{{幾個}}</li>
+<li>驗收與審查：{{驗收幾張卡、審查幾個 PR}}</li>
+<li>問題診斷：{{幾項、新開幾張票}}</li>
+<li>會議：{{時間與名稱；沒有就省略這行}}</li>
+</ul>
+
+<h2>三、工作明細</h2>
+<p style="color:#595959;font-size:10pt">「目前狀態」為{{晨會日}}早上查詢的 Jira 狀態；最右欄編號供事後查證，口頭報告不需提及。</p>
+
+<h3>3.1 開發與交付</h3>
+<table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse">
+<tr style="background-color:#D9E2F3"><th style="width:17%">工作項目</th><th style="width:48%">昨天做了什麼</th><th style="width:13%">目前狀態</th><th style="width:22%">備查編號</th></tr>
+<tr><td><b>{{白話工作項目名稱}}</b></td><td><ul>
+<li>{{做了什麼、驗證到什麼程度、時間點}}</li>
+<li>{{還沒完成或尚待確認的部分}}</li>
+</ul></td><td><b style="color:#B26A00">{{Jira 狀態}}</b></td><td>{{卡號}}<br>{{PR #編號}}</td></tr>
+</table>
+
+<h3>3.2 小修正合併</h3>
+<!-- 同 3.1 的表格；單項內容短，「昨天做了什麼」直接寫一句話，不用 <ul> -->
+
+<h3>3.3 協助他人</h3>
+<!-- 同 3.1 的表格；驗收別人的卡、審查別人的 PR；工作項目後面括號標明是誰的卡或 PR -->
+
+<h3>3.4 問題診斷</h3>
+<table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse">
+<tr style="background-color:#D9E2F3"><th style="width:17%">事項</th><th style="width:48%">結果</th><th style="width:13%">目前狀態</th><th style="width:22%">備查編號</th></tr>
+<tr><td><b>{{問題名稱}}</b></td><td><ul>
+<li>{{根因或結論；推演而非實測的要明講}}</li>
+</ul></td><td><b style="color:#7F7F7F">{{狀態}}</b></td><td>{{新開的卡號，沒有就寫 —}}</td></tr>
+</table>
+
+<h3>3.5 其他</h3>
+<ul>
+<li>{{雜務：自動版更 PR、分支與 worktree 清理等}}</li>
+</ul>
+
+<h2>四、站會可提的待確認事項</h2>
+<ol>
+<li>{{工作項目名稱（卡號）：別人需要知道或需要動作的事}}</li>
+</ol>
+
+<h2>五、資料來源與限制</h2>
+<ul>
+<li>範圍為 {{起訖日期時間}}（台北時間）。</li>
+<li>來源：{{實際用到的資料來源；連不上的來源也要寫}}。</li>
+<li>{{哪些取自對話紀錄回報未重跑、哪些另行查證}}</li>
+<li>{{範圍之後才發生、因此不列入的事}}</li>
+<li>合併進班車（train/ragdoll-next）不等於已發版到門市，仍需 Release Owner 發車。</li>
+</ul>
+</body></html>

@@ -1,0 +1,33 @@
+{
+  "skill_name": "daily-standup-report",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "tuesday-first-run-generates-report",
+      "prompt": "明天晨會要報告，幫我整理昨天做了什麼，放到 Drive 上",
+      "expected_output": "晨會日為週二，回顧前一天；Drive 資料夾查無當天檔名後，平行蒐集五個來源並建立一份原生 Google 文件，檔名為「晨會工作總結_<晨會日>」。回覆含連結與口頭稿全文，口頭稿約 250 字且不含卡號與 PR 號。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "eval_name": "same-day-rerun-returns-existing-link",
+      "prompt": "/wonderpet-general:daily-standup-report",
+      "expected_output": "Drive 資料夾已有「晨會工作總結_<今天>」時，只回覆既有文件連結與建立時間；不執行 git、GitHub、Jira、行事曆查詢，不建立任何新文件。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "eval_name": "monday-covers-friday-to-sunday",
+      "prompt": "今天週一，晨會要報告了，整理上週五到週日的工作",
+      "expected_output": "resolve_dates.py 回傳工作日為週五、週六、週日（週五 00:00 到週一 00:00）；報告抬頭列出三個日期；週末沒有活動的日子不虛構內容，並在「資料來源與限制」說明。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "eval_name": "jira-disconnected-degrades-gracefully",
+      "prompt": "整理昨天的工作放 Drive，Jira 現在連不上沒關係先跳過",
+      "expected_output": "仍完成報告；卡片標題改由 PR 標題與分支名推得，「目前狀態」欄標示未查證，並在「資料來源與限制」交代 Jira 沒連線。不要求使用者修好連線才繼續。",
+      "files": []
+    }
+  ]
+}
