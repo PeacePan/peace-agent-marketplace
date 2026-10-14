@@ -39,9 +39,21 @@ parentId = '<資料夾 ID>' and title contains '<title>' and mimeType != 'applic
 - **沒結果**：繼續。
 - 使用者明確要求重產（例如補了新資料）：檔名加後綴 `_v2`（再重產則 `_v3`）建立新文件，並在回覆中說明舊文件仍在、需要的話請使用者自行處理，不要替使用者刪除。
 
-### 步驟 2：平行蒐集
+### 步驟 2：蒐集（兩輪）
 
-五個來源同一輪平行發出，查法與踩雷見 `references/data-sources.md`：git（含所有分支）、GitHub PR 與審查、Jira、Google 行事曆、Claude 對話紀錄（`scripts/sessions_in_range.py`）。
+查法與踩雷見 `references/data-sources.md`。
+
+**第一輪（平行）**：三支腳本加兩個 MCP 查詢，範圍都用步驟 0 的 `workStart`／`workEnd`：
+
+| 來源 | 做法 |
+|---|---|
+| git（含所有分支） | `scripts/git_in_range.py`：已分好當天新提交、搬動的舊提交、自己按下的合併，並列出卡號 |
+| GitHub PR 與審查 | `scripts/github_in_range.py`：自己的 PR 動態（含合併者與 base 分支）與範圍內送出的審查 |
+| Claude 對話紀錄 | `scripts/sessions_in_range.py`：每個 session 的卡號、`result:` 結論行與最後回覆 |
+| 行事曆 | `list_events` |
+| Jira | 新開的票、自己動過的票（JQL 見 data-sources） |
+
+**第二輪**：把第一輪輸出的卡號（含審查別人 PR 標題裡的卡號）一次放進 Jira 的 `issue in (…)`，取得卡片名稱與目前狀態。
 
 某個來源連不上（最常見是 Jira 憑證）不要卡住：請使用者視情況處理，或跳過該來源，並在報告的「資料來源與限制」交代，受影響的欄位標「未查證」。
 
@@ -52,14 +64,16 @@ parentId = '<資料夾 ID>' and title contains '<title>' and mimeType != 'applic
 查證的原則是：**狀態要有證據，而且證據的時間要對**。對話紀錄是 Claude 自己的回報，不能當證據單獨使用，必須和 PR、commit、Jira 對照（對照表見 `references/data-sources.md` 最後一節）。對不上或無法對照的結論，仍可寫入，但要標明「取自對話紀錄回報、未重跑」。三個容易出錯的點：
 
 - 範圍內才發生的事才列入；晨會當天早上才發生的事（例如今早才合併的 PR）只能當背景，不能寫成昨天的成果。
-- PR 被關閉不等於已合併。
+- rebase 搬動的舊 commit 不是當天新作：以腳本的「當天新提交」為準，不要把「搬動」算成當天寫的。
+- PR 被關閉不等於已合併；合併進哪裡看 base 分支，疊在功能分支上的 PR 合併後並沒有進班車。
+- GitHub 的欄位（狀態、合併者、base、審查時間）優先於對話紀錄與印象；兩者衝突時以 GitHub 為準。
 - Jira 狀態是現在的狀態，報告中一律叫「目前狀態」。
 
 ### 步驟 4：撰寫
 
 照 `references/report-format.md` 的結構與規則寫，HTML 骨架用 `assets/report-template.html`。最容易寫壞的是口頭稿：約 250 字、不報卡號與 PR 號、順序是完成 → 進行中 → 協助他人 → 需要排人的事。編號只放明細表最右欄。
 
-寫完再掃一遍：有沒有客人或員工的個資、有沒有簡體字或英文句子、沒內容的小節是否已刪除、`{{…}}` 是否全部替換。
+寫好後先存成檔案，跑 `scripts/check_report.py <檔案>`：它檢查殘留的 `{{…}}` 與註解、五個章節、口頭稿字數與編號、簡體字、手機號碼與簽章網址，有 NG 就修到通過再建立文件，因為建立後才發現的錯很難改（見步驟 6）。腳本查不出的要自己再看一遍：有沒有客人或員工的姓名與員編、有沒有英文句子、沒內容的小節是否已刪除。
 
 ### 步驟 5：建立 Google 文件
 
@@ -76,6 +90,10 @@ parentId = '<資料夾 ID>' and title contains '<title>' and mimeType != 'applic
 ### 步驟 6：驗證與回報
 
 用 `read_file_content` 讀回剛建立的文件，確認：內容不是空的、五個章節標題都在、表格有轉進來、沒有殘留的 `{{`。通過才回報。
+
+讀回的文字有幾個是讀取器造成的樣子，**不是文件錯誤**，不要因此重建：表格儲存格裡的粗體顯示成 `\*\*文字\*\*`、`#` 顯示成 `\\\#`、儲存格內的換行顯示成 `&#10;` 或被吃掉（例如卡號與 PR 號黏在一起）。前一天的文件讀回也是這樣。
+
+**讀回發現內容有誤時，就地更正，不要重建**：用 ToolSearch 載入 `mcp__claude_ai_Google_Docs__update_doc`，以 `replaceAllText` 逐句替換（`containsText.text` 要與文件中的整句完全一致、`matchCase: true`；多筆放同一次呼叫，任一筆無效整批都不套用，回傳的 `occurrencesChanged` 應逐筆為 1）。這樣文件連結不變，也不會留下兩份報告。只有結構要改（例如新增表格列）才建 `_v2`。更正後再讀回一次。
 
 回覆使用者時，依序給：
 
