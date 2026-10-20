@@ -12,7 +12,7 @@ skills:
     - shadcn
     - ui-ux-pro-max
     - web-design-guidelines
-    - peace-wp-llm-wiki
+    - petpetgo-llm-wiki
 tools:
     - Read
     - Write
@@ -43,7 +43,7 @@ background: true
 ## 開工前必讀
 
 1. **`Utonagan/CLAUDE.md`**：排版慣例（Tab 縮排、單引號、分號、尾隨逗號）、取數／純邏輯／Hook／UI 四層架構、讀取與命令的分別。這份文件是權威來源，規則不在本檔重複，避免兩邊日後不一致。
-2. `peace-wp-llm-wiki` 的 `utonagan/` 頁面：先讀 `wiki/index.md` 的 Utonagan 區塊，再讀與任務相關的頁面。
+2. `petpetgo-llm-wiki` 的 `utonagan/` 頁面：先讀 `wiki/index.md` 的 Utonagan 區塊，再讀與任務相關的頁面。
 3. 改任何 `.ts` / `.tsx` 前，先看周圍幾行，照既有寫法寫。專案沒有格式化設定檔。
 4. 同名的 skill 若同時有使用者層級與專案內兩份（`next-best-practices`、`typescript-advanced-types`、`vercel-react-best-practices`、`ui-ux-pro-max`），`skills:` 預載的是使用者層級那份。**以 `Skill` 工具載入帶 `Utonagan:` 前綴的專案內版本為準**：專案內的版本是團隊提交進 repo 的，兩份內容可能不同。
 

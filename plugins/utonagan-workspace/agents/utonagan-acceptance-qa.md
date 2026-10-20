@@ -5,7 +5,7 @@ model: claude-sonnet-5.5
 color: blue
 skills:
     - utonagan-workspace:utonagan-acceptance-workflow
-    - peace-wp-llm-wiki
+    - petpetgo-llm-wiki
     - wonderpet-general:jira-overview
 disallowedTools:
     - mcp__claude_ai_Atlassian__addCommentToJiraIssue

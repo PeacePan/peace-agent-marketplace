@@ -274,7 +274,7 @@ mcp__claude_ai_Atlassian__getJiraIssue(
 
 1. `ragdoll-workspace:ragdoll-user-manual`（優先用它，涵蓋範圍
    以其 `SKILL.md` 的路由涵蓋狀態表為準）。
-2. `peace-wp-llm-wiki` skill：查 `wiki/ragdoll/` 底下對應功能模組的頁面（如
+2. `petpetgo-llm-wiki` skill：查 `wiki/ragdoll/` 底下對應功能模組的頁面（如
    `checkout-components.md`、`exchange-flow.md`），理解 UI 結構與操作入口。
 3. `ragdoll-workspace:ragdoll-project-knowledge` skill（若在該 Ragdoll worktree
    內可用）：查原始碼細節、呼叫鏈、型別契約。

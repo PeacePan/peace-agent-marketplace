@@ -193,7 +193,7 @@ ADF 的抽取規則（一律適用）：
 
 Utonagan 目前沒有使用手冊。依序嘗試，找到能回答「怎麼操作這個功能」的來源就停：
 
-1. `peace-wp-llm-wiki` 的 `utonagan/` 頁面：先讀 `wiki/index.md` 的 Utonagan 區塊；路由與功能清單見 `wiki/utonagan/overview.md`，本 SOP 不重複維護。
+1. `petpetgo-llm-wiki` 的 `utonagan/` 頁面：先讀 `wiki/index.md` 的 Utonagan 區塊；路由與功能清單見 `wiki/utonagan/overview.md`，本 SOP 不重複維護。
 2. Claude Design 設計稿「門市作業統一入口」（連結在 `Utonagan/CLAUDE.md`）。
 3. Step 3 讀到的程式碼註解與測試標題。
 

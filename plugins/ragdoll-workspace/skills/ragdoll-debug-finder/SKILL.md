@@ -130,7 +130,7 @@ python3 -I <此 skill 目錄>/scripts/inventory.py "$WORK/pack"
 ## Step 4：根因分析
 
 1. **REQUIRED SUB-SKILL**：呼叫 `superpowers:systematic-debugging`，照它的階段做根因調查、模式分析、假設驗證。本流程做到「確認根因」為止，不動手改程式，修復是開卡之後的事。
-2. **先讀 wiki 再讀程式**：用 `peace-wp-llm-wiki` 找到該功能的頁面。wiki 記載業務規則與已知陷阱，可避免把「設計如此」誤判成 bug。
+2. **先讀 wiki 再讀程式**：用 `petpetgo-llm-wiki` 找到該功能的頁面。wiki 記載業務規則與已知陷阱，可避免把「設計如此」誤判成 bug。
 3. **蒐集現象證據**（全部來自回報包）：
    - 由截圖與說明鎖定操作與單號，再用 `sqlite3 -readonly` 取出該筆交易與其表身。
    - `storeSnapshot.json` 是送出當下前端各 store 的狀態（購物車、會員、付款等）。

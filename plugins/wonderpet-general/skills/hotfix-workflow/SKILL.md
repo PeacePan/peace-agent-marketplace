@@ -56,7 +56,7 @@ description: 通用型 hotfix（線上緊急修正）完整工作流程，涵蓋
 | `superpowers:executing-plans` | Skill | [BUILD]（預設執行方式） |
 | `wonderpet-general:github-update-pr-summary` | Skill | [PR] |
 | `wonderpet-general:code-review-principles` | Skill | [REVIEW] |
-| `peace-wp-llm-wiki` 或 `wonderpet-general:jira-overview`（兩者擇一存在即可） | Skill | [BRANCH] 確認代碼庫名稱 |
+| `petpetgo-llm-wiki` 或 `wonderpet-general:jira-overview`（兩者擇一存在即可） | Skill | [BRANCH] 確認代碼庫名稱 |
 
 以下是**條件式**依賴，只有真的會走到對應分支時才需要，在該分支發生前再檢查一次即可，不需要在一開始就檔住整個流程：
 
@@ -143,7 +143,7 @@ gh --version
 
 ### Step 1：確認代碼庫名稱（資料夾/分支前綴用的小寫英文）
 
-用 `peace-wp-llm-wiki` 的 `wiki/index.md` 或 `wonderpet-general:jira-overview` 的「代碼庫名稱」選單確認專案對應的小寫代碼庫名稱（如 NorwegianForest→`norwegianforest`、Ragdoll→`ragdoll`、Maltese→`maltese`、Labrador→`labrador`、JavaCat→`javacat`）。查不到或有疑慮就直接問使用者，不要用猜的。
+用 `petpetgo-llm-wiki` 的 `wiki/index.md` 或 `wonderpet-general:jira-overview` 的「代碼庫名稱」選單確認專案對應的小寫代碼庫名稱（如 NorwegianForest→`norwegianforest`、Ragdoll→`ragdoll`、Maltese→`maltese`、Labrador→`labrador`、JavaCat→`javacat`）。查不到或有疑慮就直接問使用者，不要用猜的。
 
 ### Step 2：HARD GATE — 驗證分支基準
 
@@ -279,6 +279,6 @@ PR 建好之後，呼叫 `wonderpet-general:github-update-pr-summary`：
 
 ## 與其他 skill 的關係
 
-- **`peace-wp-llm-wiki`**：確認專案代碼庫名稱、資料夾對應、有無專案專屬的 hotfix 慣例時查。
+- **`petpetgo-llm-wiki`**：確認專案代碼庫名稱、資料夾對應、有無專案專屬的 hotfix 慣例時查。
 - **`wonderpet-general:jira-overview`**：Jira 欄位 ID、issue type、選單值的 schema reference，本流程開票用的欄位都對得上它。
 - **各專案自己的 develop workflow**（如 `ragdoll-workspace:ragdoll-develop-workflow`）：處理的是「新功能開發」，分支基準與起手式都不同；若該專案的 hotfix 有更細緻的專屬規範（例如表格類專案的 patch 落地流程），以該專案專屬的規範為準，本 skill 提供的是沒有專屬規範時的通用骨架。

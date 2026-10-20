@@ -7,7 +7,7 @@ description: >
 model: claude-haiku-5.5
 color: green
 skills:
-    - peace-wp-llm-wiki
+    - petpetgo-llm-wiki
     - ragdoll-project-knowledge
 tools:
     - Read

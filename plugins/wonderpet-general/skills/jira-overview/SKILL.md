@@ -162,7 +162,7 @@ JQL：`"專案名稱" = "新版結帳"` 或 `cf[10067] = "DSV"`。
 | IrishTerrier | irishterrier | NetSuite RESTlet 整合 |
 | QueenslandHeeler | queenslandheeler | 盤點機 App |
 
-更完整的 repo 對應請參考 `peace-wp-llm-wiki/wiki/index.md`。
+更完整的 repo 對應請參考 `petpetgo-llm-wiki/wiki/index.md`。
 
 ### ⚠️ 沒有對應選項時的 fallback
 
@@ -309,7 +309,7 @@ getJiraIssueTypeMetaWithFields(
 
 ## 與 wiki / 其他 skill 的關係
 
-- 業務邏輯與 repo 細節 → `peace-wp-llm-wiki` skill（NorwegianForest / Ragdoll / Maltese / Labrador 等）
+- 業務邏輯與 repo 細節 → `petpetgo-llm-wiki` skill（NorwegianForest / Ragdoll / Maltese / Labrador 等）
 - POS Sentry 錯誤要開 RD 卡 → `pos-sentry-triage` / `maltese-sentry-triage` skill（含完整 epic id、必填欄位、踩雷）
 - 開 PR 並回填卡片 → `github-update-pr-summary` skill
 
@@ -321,4 +321,4 @@ getJiraIssueTypeMetaWithFields(
 
 - 自訂欄位 id 一旦發佈後極少變動，但 **新欄位 / 新選項** 會持續加。發現 schema 與本文件不符時，用 `getJiraIssueTypeMetaWithFields` 重新確認後更新本檔。
 - `customfield_10067` 專案名稱選單會隨新專案上線而擴充，需要新主題時請 PM 在 Jira admin 新增選項，再回頭更新此檔。
-- 「代碼庫名稱」與真實 monorepo 子目錄的對應若有新增，同步更新此檔以及 `peace-wp-llm-wiki/wiki/index.md`。
+- 「代碼庫名稱」與真實 monorepo 子目錄的對應若有新增，同步更新此檔以及 `petpetgo-llm-wiki/wiki/index.md`。
