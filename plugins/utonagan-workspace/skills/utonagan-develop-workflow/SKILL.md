@@ -257,7 +257,7 @@ gh pr edit --add-label "working"
 
 ### Step 9 — 知識庫交接清單（不寫 wiki）
 
-Utonagan 的知識庫是獨立 repo（`petpetgo-llm-wiki`），其維護模型是「PR 合併後，依 submodule 指標區間 ingest」。PR 合併前它引用的 `raw/Utonagan/` 還沒有這次改動，所以本流程 **不寫 wiki**，只產出交接清單給使用者：
+Utonagan 的知識庫是 petpetgo/ai-toolkits 內的 `petpetgo-llm-wiki` skill（位於 `skills/petpetgo-llm-wiki/`），其維護模型是「PR 合併後，依 submodule 指標區間 ingest」。PR 合併前它引用的 `raw/Utonagan/` 還沒有這次改動，所以本流程 **不寫 wiki**，只產出交接清單給使用者：
 
 ```
 ## 知識庫交接（合併後請觸發 utonagan-workspace:utonagan-knowledge-manager）
