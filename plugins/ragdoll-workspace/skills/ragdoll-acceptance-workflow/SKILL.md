@@ -1,512 +1,320 @@
 ---
 name: ragdoll-acceptance-workflow
 description: >
-  Ragdoll POS-R（Jira Epic RD-7600）實機驗收的標準作業流程。定義依賴檢查、業務
-  前置狀態檢查、驗收範圍界定（父系 Epic 必須是 RD-7600）、驗收條件擷取（
-  customfield_10030 的 ADF 解析）、修復內容理解（diff-first）、實機操作判定
-  方式、判定信心不足時的論證技巧、報告格式、驗收後環境清理，以及「agent 不
-  可留言 Jira，只能回報草稿」的規則。當使用者要求對某張 POS-R ticket 做實機驗
-  收時使用。
+  Ragdoll POS-R（Jira Epic RD-7600）實機驗收的標準作業流程。定義依賴檢查、確認
+  驗收的程式碼版本與環境、業務前置狀態檢查、驗收範圍界定（父系 Epic 必須是
+  RD-7600）、驗收條件擷取（customfield_10030，markdown 或 ADF）、修復內容理解
+  （diff-first）、測試資料盤點與實機操作、資料缺口時的模擬資料法與論證法、三態
+  判定與報告格式、使用者明確要求時的 Jira 留言與截圖流程、驗收後環境清理，以及
+  「預設只回報留言草稿、不自行留言 Jira」的規則。當使用者要求對某張 POS-R
+  ticket 做實機驗收時使用。
 ---
 
 # Ragdoll POS-R 實機驗收 SOP
 
 ## 適用範圍
 
-本流程只適用於父系 Epic 是 **RD-7600（POS-R）** 的 Jira ticket。驗收的是「使用
-者明確指定的單一 ticket」，不是「給一個 Epic、自動列出所有子卡逐一驗收」。
+只適用於父系 Epic 是 **RD-7600（POS-R）** 的 Jira ticket。驗收的是「使用者明確指定的單一 ticket」，不是「給一個 Epic、自動列出所有子卡逐一驗收」。
+
+## 速覽
+
+| Step | 做什麼 |
+|---|---|
+| 0a | 工具依賴檢查；**無條件**確認驗收的程式碼版本（0a-2），備好 worktree 與 dev |
+| 0b | 業務前置狀態（開帳／登入／環境一致性），依條件性質分類，必要時自己建立前提 |
+| 1–2 | 範圍界定（父系 Epic ＝ RD-7600）、解析驗收條件 |
+| 3 | diff-first：先看清修復改了什麼，並跑 PR 自己的測試 |
+| 4 | 找操作方式（手冊 → wiki → 程式碼） |
+| 5 | 盤點測試資料、實機操作、截圖存證 |
+| 6 | 三態判定＋證據等級，回報；預設不留言 |
+| 6b | 僅在使用者明確要求時：選圖、上傳、留言 |
+| 7 | 使用者表示驗收完成後清理環境 |
+
+**授權分界**：
+
+| 可自行做（不必問） | 須使用者明確同意 | 一律不做 |
+|---|---|---|
+| 自建 worktree、clone `node_modules`、起 dev；登入員編；跨日未關帳時關帳 → 開帳（Step 0b）；dev 中台**唯讀**查詢；記憶體 fixture（純記憶體、驗完還原）；唯讀對話框 | Jira 留言與上傳附件（Step 6b）；commit／push／開 PR；完成結帳／付款（會建 dev 銷售單、開錢櫃、可能出紙）；寫入 dev 中台資料；停掉**非自己** worktree 的行程 | 直接改寫本機共用 DB 的資料列；production 查詢或寫入；為了收尾去點「取消銷售」「後付款」等破壞性按鈕 |
 
 ---
 
-## Step 0a：工具依賴檢查（MUST，任何一項缺失就停止）
+## Step 0a：工具依賴檢查（MUST，缺任何一項就停止）
 
 | 檢查項 | 方法 | 缺失時的訊息 |
 |---|---|---|
-| `wonderpet-general:jira-overview` skill | 用 `Skill` 工具嘗試載入 | 「缺少 wonderpet-general plugin（找不到 jira-overview skill），請先安裝該 plugin 後再繼續」 |
-| `ragdoll-runtime-debugging-usage` skill | 用 `Skill` 工具嘗試載入 | 「缺少 ragdoll-runtime-debugging plugin（找不到 skill 說明），請先安裝該 plugin」 |
-| `ragdoll-electron` MCP | 呼叫 `get_electron_window_info` | 工具不存在 → 「缺少 ragdoll-runtime-debugging plugin，請先安裝」；工具存在但找不到 app/port → 「Ragdoll 尚未啟動，請先在 Ragdoll 專案目錄執行 `npm run dev` 後再繼續」 |
-| `ragdoll-sqlite-mutable` / `ragdoll-sqlite-readonly` MCP | 各呼叫一次 `list_tables` | 同上邏輯區分「未安裝」vs「DB 檔案不存在（Ragdoll 未啟動過，或 `RAGDOLL_TARGET_ENV` 指向錯的環境）」 |
+| `wonderpet-general:jira-overview` skill | 用 `Skill` 載入 | 「缺少 wonderpet-general plugin（找不到 jira-overview skill），請先安裝」 |
+| `ragdoll-runtime-debugging-usage` skill | 用 `Skill` 載入 | 「缺少 ragdoll-runtime-debugging plugin（找不到 skill 說明），請先安裝」 |
+| `ragdoll-electron` MCP | 呼叫 `get_electron_window_info` | 工具不存在 → 「缺少 ragdoll-runtime-debugging plugin，請先安裝」。工具存在但找不到 app／port＝Ragdoll 尚未啟動：**不要停下來請使用者啟動**，進 Step 0a-2 自行啟動後再檢查一次 |
+| `ragdoll-sqlite-mutable`／`ragdoll-sqlite-readonly` MCP | 各呼叫一次 `list_tables` | 區分「未安裝」與「DB 檔不存在（Ragdoll 未啟動過，0a-2 啟動後再查；或 `RAGDOLL_TARGET_ENV` 指到錯的環境）」 |
 
-四項全部通過才進入 Step 0b。
+**已實測——委派給 subagent 時的工具授權落差**：委派 `ragdoll-workspace:ragdoll-acceptance-qa` 時，該次實際拿到的工具只有 `Read`／`Skill`／`SubagentHandback`，不含上表任何 MCP，Step 0a 連第一項都跑不完。這不是「未安裝」，是授權範圍比 agent 定義更嚴。遇到時：不重試同一次委派、不嘗試幫 subagent 擴權，改由 **orchestrator 自己的 session 直接接手整套 SOP**（用 `ToolSearch` 確認自己有這些 MCP 工具）。
 
-**已實測案例——委派給 subagent 時的工具授權落差：** 委派給
-`ragdoll-workspace:ragdoll-acceptance-qa` agent 執行本 SOP 時，該次呼叫實際
-拿到的工具只有 `Read`／`Skill`／`SubagentHandback`，完全不含本表任何一項
-MCP 工具，Step 0a 連第一項都跑不完就必須停止回報。這不是「未安裝」也不是
-「Ragdoll 未啟動」，是這次委派時 subagent 被授權的工具範圍比 agent 定義文件
-描述的更嚴格。**MUST** 遇到這種情況時：不要重試同一次委派、不要嘗試幫
-subagent 擴權，改為**由 orchestrator 自己的 session 直接接手執行整套 SOP**
-（前提是 orchestrator 自己的工具清單裡確實有這些 MCP 工具，可用
-`ToolSearch` 確認）。
+**選用依賴**：
+- `ragdoll-workspace:ragdoll-user-manual`：存在，但涵蓋有限（美容模式等尚待補），見 Step 4。
+- `mcp-wonderpet-table-local`（javacat）：驗收需要真實會員／月卡／優惠券等中台資料時才用。本地唯讀 DB **不含**會員資料（Ragdoll 對會員一律打遠端 GraphQL，設計上不落地）。
 
-**補充：Ragdoll 尚未啟動時，先確認要跑的是哪個分支，再啟動。** Step 0a 的
-`ragdoll-electron` 檢查若回報「Ragdoll 尚未啟動」，在執行 `npm run dev` 之前
-MUST 先確認分支，不是隨便啟動目前 checkout 到的任何分支：
+### Step 0a-2：確認驗收的程式碼版本，備好環境（無條件執行）
 
-1. 查 Jira `customfield_10033`（分支名稱）取得這次修復的分支名。
-2. 查該分支對應的 PR 確認 `state`／`base`：
-   - PR 已 merge 進 `release/ragdoll` 或已被 cascade 到 `train/ragdoll-next`
-     → 可以直接在既有 checkout 上驗收，不需要另建 worktree。
-   - **PR 仍是 `open`**（已實測 base 為 `train/ragdoll-next`，尚未
-     merge）→ 修復內容只存在於這個 PR 分支本身，**MUST** checkout 這個分支
-     才驗收得到，驗收 `train/ragdoll-next` 目前狀態驗不到任何修復。
-3. checkout 既有遠端分支時 **MUST NOT** 用 `EnterWorktree({name})`——那只會
-   從 HEAD/預設分支**新建**分支，無法 checkout 已存在的遠端分支。改為手動：
+**不論 Ragdoll 是否已在跑都要做**。工具檢查全過不代表視窗跑的是有修復的程式碼——已實測：檢查時 Ragdoll 已在跑，但那是主 checkout 的 `master`，根本不含修復，是看行程 cwd 才發現。
+
+1. **找分支與 PR**：Jira `customfield_10033`（分支名稱）常是空的 → 用 GitHub 搜 PR（`search_pull_requests`：`RD-xxxx repo:petpetgo/petpetgo`），或 `git branch -r --list '*RD-xxxx*'`。記下 PR 的 `state`／`base`／head sha／是否 draft。
+2. **決定在哪驗**：
+   - PR 已 merge（進 `release/ragdoll`，或已 cascade 到 `train/ragdoll-next`）→ 含該 commit 的 checkout 即可（`git merge-base --is-ancestor <PR head> <checkout HEAD>` 確認）。
+   - PR 仍 open → 修復只存在 PR 分支，**MUST** 跑 PR 分支；驗 `train/ragdoll-next` 或 `master` 驗不到修復。
+3. **檢查已在跑的 Ragdoll 是哪份程式碼**：
    ```bash
-   git fetch origin <分支名稱>
-   git worktree add .claude/worktrees/<自訂名稱> <分支名稱>
+   lsof -nP -iTCP:3100 -sTCP:LISTEN      # 取 PID
+   lsof -a -p <PID> -d cwd -Fn           # 看 cwd
    ```
-   建好後再用 `EnterWorktree({path: "<上面那個路徑>"})` 把 session 切進去做
-   隔離（這個呼叫方式沒有「只能新建分支」的限制）。
-4. worktree 需要**真實 `npm ci`**（Turbopack 建置會拒絕 symlink 的
-   `node_modules`），首次安裝視網路狀況要數分鐘，用 `run_in_background`
-   執行、以背景輪詢 log 確認完成，不要用 `sleep` 卡住整個 turn。
-5. `npm run dev` 同樣背景執行，起手前先 `pwd` 確認目前 shell 所在目錄——如果
-   前一個指令已把 session cwd 切到 `Ragdoll/` 目錄下，再下一次
-   `cd Ragdoll && npm run dev` 會因路徑不存在直接失敗（已實測踩過）。
+   cwd 的 HEAD 不含修復 → 這個視窗不能當證據。**不要強殺**（可能是使用者自己的視窗）；3100／9222 被占用時，請使用者關閉，或確認是殘留後再處理。
+4. **建 worktree**：預設用 `--detach`——開發 session 通常已佔用同一分支，直接 `git worktree add <路徑> <分支>` 會失敗；detach 也不會產生本機分支：
+   ```bash
+   git fetch origin <分支>
+   git worktree add --detach .claude/worktrees/RD-xxxx-accept origin/<分支>
+   ```
+   再用 `EnterWorktree({path: "<絕對路徑>"})` 切進去隔離。**MUST NOT** 用 `EnterWorktree({name})`——它只會從 HEAD 新建分支，無法 checkout 既有遠端分支。
+5. **`node_modules`**（Turbopack 拒絕 symlink，必須是真實目錄）：
+   - 優先從別的驗收 worktree 做 APFS clone：`cp -cR <來源>/Ragdoll/node_modules <新>/Ragdoll/node_modules`（約 17 秒）。**前提**：`git diff <來源 HEAD> <目標 HEAD> -- Ragdoll/package.json Ragdoll/package-lock.json` 只差 app 自己的 `version`。
+   - 否則 `npm ci`，用 `run_in_background` 並輪詢 log，不要用 `sleep` 卡住 turn。
+6. **起 dev**：對 `npm run dev` **本身**設 `run_in_background`（輸出導到檔案）；**不要**自己在指令裡再包 `&`——外層會立刻結束、通知誤導，`TaskStop` 也停不掉真正的行程。起手前先 `pwd`（cwd 已在 `Ragdoll/` 時再 `cd Ragdoll` 會失敗）。`dev.sh` 會先跑 lint，有 lint 錯就不啟動。
+   已知風險（RD-8275 驗收記錄）：`dev.sh` 對**共用**本機 DB 做 schema push，分支 schema 與上次執行的不同時，可能刪掉別分支的欄位。
+7. **就緒判定與留證**：3100、9222 皆 LISTEN，且 Next 與 Electron 行程的 cwd 都是這個 worktree（`lsof` 兩行輸出留進報告）。
 
-**選用依賴（缺少不擋流程，只在需要時才會用到）：**
-
-- `ragdoll-workspace:ragdoll-user-manual` skill **實測目前不存在**（曾嘗試載入
-  直接回傳 `Unknown skill`）。Step 4 已改為以 fallback 鏈處理，這裡不再把它列
-  為硬性依賴，避免每次驗收都被一個不存在的 skill 卡住。
-- `mcp-wonderpet-table-local`（javacat）MCP：只有當驗收情境需要**真實會員/
-  優惠券資料**時才用得到（見 Step 5 的「測試資料查詢」）。本地唯讀 DB **不
-  含**會員資料，Ragdoll 對會員的查詢一律打遠端 GraphQL，這不是「本地 DB 沒
-  同步」，是設計上就不落地。
+回頭重跑 Step 0a 的 electron／sqlite 檢查，全部通過才進 Step 0b。
 
 ---
 
-## Step 0b：業務前置狀態確認（MUST——用來正確分類結果，不是無條件擋在 Step 4 之前）
+## Step 0b：業務前置狀態確認（用來正確分類結果，不是無條件擋在 Step 4 之前）
 
-`/checkout` 對「未開帳」與「未登入銷售員」有全面性攔截（見
-`next/app/checkout/page.tsx:149-165` 的 `isCheckoutDisabled` / `guardCheckout`）。
-**但 MUST NOT 把「未開帳/未登入」直接當成無條件的硬性前置門檻**：POS-R 有不少
-驗收條件本身描述的就是「未開帳／未登入／跨日未關帳」這類邊界狀態下按鈕該有的
-行為（例如 RD-8153「尚未開帳時點擊『銷售查詢(退換貨)』按鈕 → 按鈕可點擊並顯示
-提示」），若在進 Step 4 前一律要求先開帳、先登入，會讓這類條件永遠無法被驗證
-——這是初版 SOP 在 dry run（見 Task 6）中發現的真實設計缺陷，已修正如下。
+`/checkout` 對「未開帳」「未登入銷售員」有全面攔截（`next/app/checkout/page.tsx` 的 `isCheckoutDisabled`／`guardCheckout`）。**但 MUST NOT 把它們當無條件前置門檻**：不少驗收條件本身就在描述這些邊界狀態下的行為（例如 RD-8153「尚未開帳時點擊『銷售查詢(退換貨)』→ 按鈕可點擊並顯示提示」）。
 
-**MUST** 在進入 Step 4 前，先讀懂**每一條**驗收條件本身描述的情境：
+進 Step 4 前，逐條先讀懂每條條件描述的情境：
 
-1. **條件本身就是在描述「未開帳／未登入／跨日未關帳」等邊界狀態下的行為**
-   （例如「尚未開帳時點擊 X」「銷售員未登入時點擊 Y」）→ **不要**先幫使用者
-   開帳或登入，直接在目前的真實邊界狀態下操作、觀察、判定通過/不通過。
-2. **條件描述的是正常結帳流程的一部分**（例如「掃碼後小計金額正確」）→ 這類
-   條件的前提是環境已經就緒，此時才需要依序確認：
-   - **開帳狀態**：用 `electron_take_screenshot` 或 `electron_eval` 讀取畫面/
-     store 狀態，確認 `reportStatus === 'OPENED'`。不符 → 該條標記
-     「⚠️ 無法驗證（環境未開帳，且此條件本身不是在測試未開帳行為）」，
-     並回報「請先在功能選單執行開帳後再重新驗收此條件」，**不要**標「不通過」。
-   - **銷售員登入狀態**：確認畫面上已顯示登入的銷售員。不符 → 同上邏輯標記
-     「⚠️ 無法驗證」並提示「請先登入銷售員」。
-3. **環境一致性**（不論條件屬於哪一類都要確認一次）：確認
-   `ragdoll-sqlite-mutable`/`readonly` 查到的資料是使用者預期的環境
-   （`RAGDOLL_TARGET_ENV`，預設 `development`，需在啟動 Claude Code**之前**
-   設定，事後改不會生效）。若查詢結果明顯與使用者描述的情境對不上，回報
-   「目前連到的環境可能是 `<猜測值>`，與你描述的情境不符，請確認
-   `RAGDOLL_TARGET_ENV` 設定」，停止並等待使用者確認後再繼續（這條無法 100%
-   自動判定，只能盡力提示）。
+1. **條件本身在測「未開帳／未登入／跨日未關帳」** → 不要先開帳或登入，直接在邊界狀態下操作並判定 ✅／❌。**不得**以環境未就緒為由改標「無法驗證」。
+2. **條件是正常流程的一部分** → 需要環境就緒，前提由**自己建立**（見下）。只有「自己也建不起來」才標 ⚠️ 無法驗證（寫明卡在哪一步），不要標 ❌。
+3. **環境一致性**（每條都要確認一次）：`ragdoll-sqlite-*` 查到的是否為預期環境（`RAGDOLL_TARGET_ENV`，預設 `development`，須在啟動 Claude Code **之前**設定，事後改無效）。對不上就停止並回報，請使用者確認。
 
-**判定規則（見 Step 6）**：只有「條件本身不是在測試邊界狀態、卻因環境未就緒
-導致操作失敗」時才歸類「⚠️ 無法驗證」；條件本身就是在測邊界狀態時，一律依實際
-觀察結果正常判定「✅ 通過」或「❌ 不通過」，不套用「無法驗證」escape hatch。
+### 自己建立前提：登入與「關帳 → 開帳」
 
-**實測發現：「開帳」不是一次性動作，MUST 允許自己執行開帳/登入來建立測試前提。**
-第 2 類條件（正常流程）的前提環境常常需要**你自己**動手建立，而非要求使用者
-先做好——只要是在專屬於這次驗收的隔離開發環境（自建的 worktree + `npm run dev`）
-裡，登入銷售員、開帳都是低風險、可逆的本地操作，直接自己做，不要停下來問。
-以下是實測中發現的兩個非顯而易見的坑：
+在**自建的隔離 dev 環境**（`RAGDOLL_TARGET_ENV=development`、測試門市）裡，登入員編與開帳可自行做、不必問。但要清楚真實副作用：
 
-- **本機開發資料庫是整台機器共用，不是依 worktree 隔離。** Ragdoll 的
-  `offline-mutable.db`/`offline-readonly.db` 路徑固定在
-  `~/Library/Application Support/Electron/data/<RAGDOLL_TARGET_ENV>/`，
-  跟你在哪個 worktree 執行 `npm run dev` 無關。這代表：
-  - 可能會看到**其他 session 或前幾天測試殘留**的已開帳紀錄（`offline_pos_report`
-    的 `squared_at IS NULL`），日期是舊的。
-  - 這種殘留紀錄雖然技術上「已開帳」，但畫面會判定「已超過營業時間」並擋下
-    所有商品掃描/小計操作，提示「請先至功能選單重新開帳」。
-  - **處理方式**：這不是 bug，是正常前置作業。先在功能選單執行一次「關帳」
-    （closing 資料即使是別人開的也可以關），再「立即開帳」開一筆今天的新
-    紀錄，即可正常操作。
-  - 同理，這個 DB 是共用的，**不要**為了製造測試情境去直接改寫其中的資料列
-    （例如改別人的銷售單、改本地 `user` 表的 disabled 欄位）——那會影響同
-    機器上其他平行進行的 session。若真的需要用資料異動製造某個邊界狀態，
-    參考 Step 6 的「純函式論證法」，優先用邏輯推論取代實際資料破壞。
-- **銷售員登入/會員查詢的輸入框常是數字鍵盤 UI，不是純文字輸入框。**
-  `electron_fill_input` 對這類欄位可能填得進去、但畫面顯示的是數字鍵盤的
-  自訂 state，直接送出可能無效。保險做法：對每一位數字用
-  `electron_click_by_text`（如 `"7"`）逐位點擊，或用 `electron_press_key`
-  送單一按鍵，最後點擊/送出「確認」。
+- 本機 DB 是**整台機器共用**（`~/Library/Application Support/Electron/data/<env>/`），不依 worktree 隔離，常有前幾天殘留的未關帳日結。
+- 「關帳」「開帳」會**寫共用 DB 並上傳 dev 中台日結**；被關掉的常是使用者本人前一天的日結，無法復原（只能再開新帳）。
+
+偵測跨日未關帳：
+
+```sql
+SELECT name, accounting_date, squared_at, upload_status FROM offline_pos_report ORDER BY rowid DESC LIMIT 3
+```
+
+`squared_at IS NULL` 且 `accounting_date`（epoch ms）早於今天＝**跨日未關帳**。畫面徵兆：掃商品 toast「已超過營業時間，請先至功能選單重新開帳」，功能選單「開帳」灰、「關帳」可點。
+
+規則：
+- **今天已開帳** → 直接用，不要關帳重開。
+- **跨日未關帳** → 功能選單「關帳」→「確認關帳」→「立即開帳」→「確認開帳」（預設 12300／0）。若跳「中台仍有未關閉日結單」二次確認，用 `[role="alertdialog"] button:last-of-type` 按確認，別用 `click_by_text('確認')`（會與「確認開帳」搶）。
+- **報告 MUST 揭露**：關掉哪一筆（單號、筆數、金額）、新開哪一筆（單號），列入「環境副作用」。
+- **收尾不關今日的帳**（開帳中是機台上班日的正常狀態，見 Step 7）。
+- **員編由使用者提供**，不要猜、不要改本地 `user` 表。輸入是數字鍵盤，做法見 `references/electron-tool-pitfalls.md`。
+- **禁止**為了製造情境直接改寫共用 DB 的資料列（改別人的銷售單、改 `user` 表的 disabled…），會影響同機的其他 session。需要邊界資料走 Step 6 的模擬資料法或論證法。
 
 ---
 
 ## Step 1：驗收範圍界定（POS-R = RD-7600 校驗，含邊界情況）
 
-1. 使用者給一張 ticket 卡號（例：`RD-8153`）。
-2. 若使用者給的卡號本身就是 `RD-7600` → 停止並回報：「RD-7600（POS-R）本身是
-   Epic，請指定其底下的具體 ticket 卡號」。
-3. 呼叫：
-
-```
-mcp__claude_ai_Atlassian__getJiraIssue(
-  cloudId: "f338306a-4b54-421e-9209-2e9f451c67f7",
-  issueIdOrKey: "<使用者指定的卡號>",
-  fields: ["summary", "issuetype", "parent", "customfield_10030"]
-)
-```
-
-   若呼叫失敗（查無此卡 / 無權限）→ 停止並回報：「查無 `<卡號>` 或沒有讀取權限，
-   請確認卡號是否正確」。
-
-4. 若回傳結果**沒有 `parent` 欄位**（無父系卡片）→ 停止並回報：「⚠️ 無法確認範圍：
-   此卡沒有父系 Epic，無法判斷是否屬於 POS-R（RD-7600），請確認後再指定」。
-   **這與「明確不屬於」不同，不可當成拒絕處理**（避免對資料缺失的卡片產生使用者
-   無法覆寫的假陰性）。
-5. 若 `parent.key === "RD-7600"` → 屬於 POS-R 範圍，繼續 Step 2。
-6. 若 `parent.key !== "RD-7600"`：
-   - 檢查 `parent.fields.issuetype.name`：若**不是**「大型工作」（代表這張卡是
-     Subtask，`parent` 指向的是它的父 Task 而不是 Epic）→ 對 `parent.key` 再做
-     一次相同的 `getJiraIssue` 查詢（只遞迴這一次，最多往上兩層），把新查到的
-     `parent` 拿來重複步驟 4-6 的判斷。
-   - 若 `parent.fields.issuetype.name` **是**「大型工作」但 key 不是 `RD-7600`
-     → **明確拒絕**：「此卡（`<卡號>`）的父系 Epic 是 `<parent.key>`
-     （`<parent.fields.summary>`），不是 POS-R（RD-7600），本 skill 僅適用於
-     Ragdoll POS-R 範圍，無法驗收」，停止流程。
-
-**已實測案例**：`RD-8144` 的 `parent.key` 為 `"RD-7600"`，`parent.fields.summary`
-為 `"POS-R"`，`parent.fields.issuetype.name` 為 `"大型工作"`。
+1. 使用者給卡號（例 `RD-8153`）。若就是 `RD-7600` → 停止並回報「RD-7600（POS-R）本身是 Epic，請指定其底下的具體 ticket」。
+2. 用 Atlassian MCP 的 `getJiraIssue`（依環境是 `mcp__plugin_atlassian_atlassian__getJiraIssue` 或 `mcp__claude_ai_Atlassian__getJiraIssue`，擇一）**一次抓齊**，cloudId `f338306a-4b54-421e-9209-2e9f451c67f7`：
+   `fields: ["summary","issuetype","parent","status","labels","description","customfield_10030","customfield_10033","customfield_10057","customfield_10059","customfield_10060","customfield_10061"]`
+   （依序是：驗收條件、分支名稱、規格〔任務〕、正確行為〔漏洞〕、使用者故事、規格〔故事〕）。呼叫失敗 → 停止並回報「查無 `<卡號>` 或沒有讀取權限」。
+3. **沒有 `parent`** → 停止並回報「⚠️ 無法確認範圍：此卡沒有父系 Epic」。這與「明確不屬於」不同，不可當拒絕（避免對資料缺失的卡片產生使用者無法覆寫的假陰性）。
+4. `parent.key === "RD-7600"` → 繼續。
+5. 否則看 `parent.fields.issuetype.name`：
+   - 不是「大型工作」（代表這是 Subtask，`parent` 是它的父 Task）→ 對 `parent.key` 再查一次，只遞迴這一次（最多往上兩層），重複步驟 3–5。
+   - 是「大型工作」但 key 不是 `RD-7600` → **明確拒絕**：「此卡的父系 Epic 是 `<key>`（`<summary>`），不是 POS-R（RD-7600），本 skill 無法驗收」。
 
 ---
 
-## Step 2：解析驗收條件（`customfield_10030`）——通用 ADF 文字抽取器
+## Step 2：解析驗收條件（`customfield_10030`）
 
-`customfield_10030` 回傳 ADF `doc`，`content` 陣列可能包含以下任一種寫法，**三種
-都要能解析**：
+先判斷格式再抽取。
 
-1. **`taskList`**（checklist 寫法）：`content` 是多個 `taskItem`，每個 `taskItem`
-   的 `content` 是內文節點（通常是一個 `text`）。
-   ```json
-   {"type":"taskList","content":[
-     {"type":"taskItem","content":[{"type":"text","text":"驗收條件文字"}],
-      "attrs":{"localId":"...","state":"TODO"}}
-   ]}
-   ```
-   **忽略 `attrs.state`**（那是 Jira 上是否被手動勾選過，跟驗收判定無關）。
+### 格式 A：markdown 字串（Atlassian plugin 的常見回傳）
 
-2. **`bulletList` / `orderedList`**（項目符號/編號清單寫法）：`content` 是多個
-   `listItem`，每個 `listItem.content` 通常是一個 `paragraph`，`paragraph.content`
-   才是實際的 `text` 節點（比 `taskList` 多一層）。
+```markdown
+### 正常情境
+- [ ] 清單新增「購買包月門市」欄，…
+### 邊界條件
+- [ ] …
+```
 
-3. **頂層 `paragraph`**（純文字寫法）：`paragraph.content` 是 `text` 節點。
+- 每個 `- `／`* `／`1. `（含 `- [ ]`、`- [x]`）清單項目是一條獨立條件；**忽略勾選狀態**（只代表 Jira 上被手動勾過）。
+- `#` 開頭的行是**分組標題**，不是條件，可當報告分組名；條件編號依出現順序連續編號。
+- 縮排的延續行屬同一條；沒有清單、只有段落時，每個空行分隔的段落是一條。
+- 一條條件內用「；」串了多項檢查，仍算一條，但逐項判定、逐項寫依據，有一項不符整條 ❌。
+- 結尾常夾零寬字元（如 U+200C）等雜訊，去除前後空白。
 
-**抽取規則（一律適用）：**
+### 格式 B：ADF（備用）
 
-- 把每個 `taskItem`、每個 `listItem`、每個「`doc.content` 頂層的 `paragraph`」
-  視為**一條獨立的驗收條件邊界**的起點。
-- 在邊界內遞迴收集所有 `text` 節點的內容串接成該條件的文字。
-- **`hardBreak` 節點也視為條件邊界**（作者常用 Shift+Enter 手動換行，在同一個
-  `paragraph`/`taskItem` 裡塞好幾條條件，而不是規規矩矩用清單語法）——遇到
-  `hardBreak` 就把目前收集到的文字結算成一條條件，重新開始收集下一條。
-- 收集完後，去除每條條件前後的空白字元。
+`content` 可能是以下任一種，**三種都要能解析**：
 
-**若最終解析出 0 條** → **MUST 停止並回報**：「無法從 `customfield_10030` 解析出
-任何驗收條件，請確認該卡是否已填寫驗收條件」。**MUST NOT** 自行從「規格」
-（`customfield_10057`）、「正確行為」（`customfield_10059`）、「使用者故事」
-（`customfield_10060`）等欄位**發明新的獨立驗收條件編號**——那些不是判定
-✅/❌ 的正式依據來源。
+1. `taskList`：每個 `taskItem` 是一條，忽略 `attrs.state`。
+2. `bulletList`／`orderedList`：每個 `listItem` 是一條（`listItem.content` 通常是 `paragraph`，`text` 在 `paragraph.content`，比 `taskList` 多一層）。
+3. 頂層 `paragraph`：每個是一條。
 
-**但這不代表可以不讀那些欄位。** MUST 額外完整讀一次 `description` 與
-`customfield_10059`（正確行為，Bug 類型卡片才有）。這兩個欄位常常用「敘事」
-的方式描述根因，裡面可能提到**驗收條件清單沒有單獨列成一條的額外觸發路徑**
-——例如某張票的驗收條件只寫了「情境 A」「情境 B」兩條，但 `description` 裡另外
-敘述了開發階段才發現的「情境 C」，且修復本身也一併處理了。若不讀完整段落，
-很容易漏驗這條路徑（曾實際發生：只看驗收條件清單會漏掉第三條根因路徑，
-是使用者事後追問「正確行為有沒有真的修復」才逼出來的）。
+一律適用：在邊界內遞迴收集 `text` 串成該條文字；**`hardBreak` 也是條件邊界**（作者常用 Shift+Enter 在同一個段落塞多條）；去除前後空白。
 
-處理方式：對於 `description`/正確行為中提到、但驗收條件清單沒有單獨列出的
-額外路徑，**不要**佔用正式驗收條件的編號，而是在報告中以「補充查核」的方式
-獨立列出（見 Step 6 的回報格式），並同樣給出 ✅/❌/⚠️ 三態之一的結論，不能只
-提及不下判斷。
+### 通用規則
 
-彙整結果為一份「待驗收清單」，供 Step 5 逐條驗證。
+- **解析出 0 條** → **MUST 停止並回報**「無法從 `customfield_10030` 解析出任何驗收條件，請確認該卡是否已填寫驗收條件」。**MUST NOT** 從規格、正確行為、使用者故事等欄位發明新的獨立驗收條件編號，那些不是判定 ✅／❌ 的正式依據。
+- **但 MUST 完整讀其他欄位**，依卡片類型：
+
+  | 卡片類型 | 一併完整閱讀 |
+  |---|---|
+  | 任務 | `description`、`customfield_10057`（規格）——欄位順序、畫面細節常只寫在規格 |
+  | 漏洞 | `description`、`customfield_10059`（正確行為） |
+  | 故事 | `description`、`customfield_10060`（使用者故事）、`customfield_10061`（規格） |
+
+  這些欄位常提到「驗收條件清單沒單獨列出的路徑或細節」（曾漏驗第三條根因路徑；RD-8427 的欄位順序與「移除購買日／到期日」只寫在規格）。這類**不佔用正式條件編號**，在報告以「補充查核」獨立列出，同樣給 ✅／❌／⚠️ 之一，不能只提不判。
+
+彙整成「待驗收清單」，供 Step 5 使用。
 
 ---
 
-## Step 3：理解程式碼修復內容（diff-first，建立判定信心的基礎）
+## Step 3：理解程式碼修復內容（diff-first）
 
-在讀操作手冊、動手操作之前，**先讀懂這次修復實際改了什麼**，理由：Step 6 的
-「純函式論證法」與「補充查核」都需要以此為根據，光靠 Jira 描述或操作手冊猜測
-運作方式，遇到不容易操作重現的邊界情境會判斷不出結果，也難以自信地給出結論。
+在讀手冊、動手前先讀懂這次修復改了什麼；Step 6 的「補充查核」與論證法都要靠它。
 
-1. 找出這次修復所在的分支，**先算出真正的分支點再比較，不要直接對 base
-   分支目前的狀態跑 diff**：
+1. **取得精確的變動檔案**：
+   - 首選 GitHub `pull_request_read`（`get_files`）：直接給 PR 的檔案與 patch，不受班車分支漂移影響。
+   - 交叉驗證：`git merge-base origin/<base> HEAD` 算出分支點，再 `git diff <merge-base>..HEAD --stat`。**不要**直接對 base 分支目前狀態跑 diff（班車會混入十幾個無關檔案）。變動檔案數應與 PR description 的調整內容吻合。
+2. 找**共用的核心函式**：修復常抽出一支共用純函式，被多個呼叫端共用。理解它的輸入輸出契約，比逐一讀呼叫端快。
+3. 對照 Step 2 的 `description`／規格／正確行為：每條根因路徑與規格細節，是否都能在 diff 找到對應修正。找不到的，代表可能沒修好，或需要進一步確認。
+4. 讀 PR 新增的測試涵蓋哪些情境，並**實際跑一次**作為獨立證據（只跑 next 層；electron 層單測在本機有已知問題，不作依據）：
    ```bash
-   git merge-base origin/<base 分支> HEAD   # 例：origin/train/ragdoll-next
-   git diff <merge-base 結果>..HEAD --stat
+   npm run test:next:integration -- --skip-build <相對 test/next/integration/ 的路徑，例 salon/xxx.test.tsx>
+   npm run test:next:unit -- <相對 next/ 的路徑>      # 單元不要加 --skip-build，加了會卡死（RD-8311 記錄）
    ```
-   看改了哪些檔案，再對每個核心邏輯檔案跑單檔 diff 細看。`train/ragdoll-next`
-   這類班車分支會不斷有其他 PR 合併進去，若直接跑
-   `git diff origin/train/ragdoll-next..HEAD`，會混入大量與本次修復完全無關
-   的檔案（已實測：naive diff 混入十幾個不相關檔案，看起來像修復
-   範圍暴增）。跑完 `merge-base` 版本後，變動檔案數應與 PR description 的
-   「調整內容」表格吻合，才是正確的比較基準。
-2. 找出**共用的核心函式**：Ragdoll 的修復常常會抽出一支共用的純函式（例如
-   `applyXxxToYyy(items, someState)`），被多個呼叫端（一般流程、暫結還原、
-   換購、優惠券回滾……）共同呼叫。找到這支函式，理解它的輸入輸出契約，比
-   分別去讀每個呼叫端更快建立全局理解。
-3. 對照 Step 2 讀到的 `description`/正確行為敘述，逐條核對：每一條敘述的
-   根因路徑，是否都能在 diff 裡找到對應的呼叫點被修正。找不到對應修正的
-   路徑，代表可能沒有真的修好，或是需要進一步確認。
-4. 若修復已經有專屬的自動化測試（同一批 commit 新增的 test 檔案），讀一下
-   測試涵蓋了哪些情境、以及測試檔案/專案內部規則（如
-   `.claude/rules/testing-rules.instructions.md`）有沒有記載「這個情境曾經
-   被 mock 救援出假綠燈，已經改過測試寫法」這類線索——這代表這條路徑的自動
-   化測試是可信的，可以作為信心來源之一。
+   前景執行，tool timeout 約 240 秒；看到 `Test Files … passed` 才算。stderr 雜訊（如 `Missing Description…`、測試替身缺 `db.list` 的 `triggerCalcBestPromotion` TypeError）不是失敗，先看堆疊是否指向本 PR 新增的程式碼。啟動後 0% CPU、零輸出＝卡住，只殺**自己 worktree** 的 vitest 行程後重跑。也看專案的 `.claude/rules/testing-rules.instructions.md` 有沒有「曾被 mock 救援出假綠燈」的記載。
 
 ---
 
 ## Step 4：讀操作手冊
 
-先嘗試載入 `ragdoll-workspace:ragdoll-user-manual` skill。
+依序嘗試，找到能回答「怎麼操作」的來源就停：
 
-**Fallback 鏈（依序嘗試，找到能回答「怎麼操作這個功能」的來源就停）：**
+1. `ragdoll-workspace:ragdoll-user-manual`（涵蓋範圍以其 `SKILL.md` 為準；美容模式、促銷、退貨等尚待補）。
+2. `petpetgo-llm-wiki`：`wiki/ragdoll/` 對應功能模組頁面。
+3. `ragdoll-workspace:ragdoll-project-knowledge`（在 Ragdoll worktree 內可用）：原始碼細節、呼叫鏈、型別契約。
+4. Step 3 讀到的程式碼本身：UI 入口元件、JSDoc、測試的 `describe`／`it` 標題，常是最準確的操作步驟（例：美容模式切換器在 `item-input.tsx`，由 `handleModeSwitch` 處理）。
 
-1. `ragdoll-workspace:ragdoll-user-manual`（優先用它，涵蓋範圍
-   以其 `SKILL.md` 的路由涵蓋狀態表為準）。
-2. `petpetgo-llm-wiki` skill：查 `wiki/ragdoll/` 底下對應功能模組的頁面（如
-   `checkout-components.md`、`exchange-flow.md`），理解 UI 結構與操作入口。
-3. `ragdoll-workspace:ragdoll-project-knowledge` skill（若在該 Ragdoll worktree
-   內可用）：查原始碼細節、呼叫鏈、型別契約。
-4. Step 3 已經做過的 diff 閱讀本身：程式碼的 JSDoc 註解、測試檔案的
-   `describe`/`it` 標題，往往就是最準確的操作步驟說明。
+都查過仍找不到才標 ⚠️ 無法驗證（找不到操作方式的文件依據），**不要猜**。
 
-若把以上來源都查過，仍然找不到某條驗收條件對應的操作方式（涵蓋範圍真的是
-空白，不是你沒找到），才在報告中標記該條「⚠️ 無法驗證（找不到對應操作方式的
-文件依據）」，不要憑空猜測操作方式。
+**手冊缺口回饋**：驗收中摸索出手冊沒寫的操作路徑，在報告「建議補手冊」寫一句（入口 → 步驟），不要只留在這次對話。
 
 ---
 
-## Step 5：實機操作驗收
+## Step 5：盤點測試資料與實機操作
 
-對每一條驗收條件：
+### 5.1 盤點測試資料（動手前）
 
-1. 依 Step 4 取得的操作步驟，用 `ragdoll-electron` 系列工具實際操作（點擊、輸
-   入、截圖）
-2. 用 `read_electron_logs` 確認主控台輸出
-3. 用 `ragdoll-sqlite-mutable` 或 `ragdoll-sqlite-readonly` 的 `query` 確認資料
-   是否正確落地
-4. 每個關鍵操作後截圖存證
+逐條寫出：需要什麼資料（會員／寵物／月卡／單據、哪個門市、什麼狀態）→ 去哪查 → 缺口怎麼辦。
 
-**實測環境操作注意事項：**
+- 查 dev 中台：`mcp-wonderpet-table-local` 先 `javacat_switch_environment(env: "dev")`，**唯讀**。查詢陷阱、本機 DB 現成資料、發票條碼等食譜見 `references/test-data-recipes.md`。
+- **留意門市維度**：機台的門市決定哪些資料算本店／他店（例如「帶入未付款銷售」只列本店單據；本機 `pos_store` 只有目前門市一列，查不到他店名稱）。
+- **資料有缺口時**：不要寫入共用 dev 中台或本機 DB 去造資料。改走 Step 6 的**模擬資料法**；仍不可行才用論證法。
 
-- **測試資料查詢（會員/優惠券）**：本地唯讀 DB **沒有**會員資料，Ragdoll 對
-  `posmember` 的查詢一律打遠端 GraphQL。要準備一個真的能被 Ragdoll 查得到的
-  測試會員，或需要查某會員持有的優惠券，用 `mcp-wonderpet-table-local` 的
-  `javacat_find`，且**先**呼叫 `javacat_switch_environment(env: "dev")`（對應
-  Ragdoll 的 `RAGDOLL_TARGET_ENV=development`）。查詢優惠券時若要用
-  `couponEventName_type` 這類 join 出來的欄位當篩選條件，避免同時疊加日期範圍
-  篩選——實測混用容易觸發後端 500，改成先撈較大 `limit` 再自己過濾。
-- **商品的會員價/定價**：本地唯讀 DB 的 `item` 表就有，`price` 欄位＝會員價、
-  `label_price` 欄位＝定價，兩者不同的商品才適合拿來測「會員價 vs 定價」類的
-  驗收條件。
-- **換購/退貨的紙本發票條碼驗證**：UI 會要求刷入 19 碼一維條碼才能繼續，格式
-  是 `{民國年3碼}{結束月份2碼}{發票號碼10碼}{來源末4碼}`（結束月份是雙月配號
-  期別的月份，公式邏輯見 `next/lib/utils/invoice/egui-period.ts` 的
-  `getEGUIPeriod` 與 `invoice-verify-panel.tsx`），不是把發票號碼原文送出就
-  能過。本地 `issue_invoice` 表可查到 `egui_no`。
-  **「來源末 4 碼」的 saleName 不是固定抓本地 `offline_sale.name`**——它是
-  UI 元件當下渲染這筆單據時拿到的 `sale.body.name`：透過「商品/銷售查詢
-  (退換貨)」或「美容銷售查詢」對話框查到的單子，資料來源是**遠端 GraphQL**
-  （`PosSaleRecord`），`body.name` 對應的是**中台編號**（畫面上「銷售編號」
-  欄位顯示的值，例如 `0032609100003`），跟本地 `offline_sale.name`
-  （`S260910174454643` 這種格式）是兩組不同字串，取末 4 碼算出來的候選碼也
-  不同。已實測：優先用本地 `offline_sale.name` 末 4 碼驗證失敗，改用
-  畫面上顯示的「銷售編號」末 4 碼才驗證成功。**保險做法**：組碼前用截圖或
-  `electron_get_page_structure` 確認畫面上實際顯示的「銷售編號」欄位值，直接
-  拿那組數字的末 4 碼，不要憑本地 SQL 查詢結果推算。
-- **`ragdoll-electron` MCP 工具的已知眉角**：
-  - Radix `DropdownMenu` / `Popover` 觸發鈕用 `electron_click_by_text` 點擊
-    時，實測經常在同一次呼叫內被判定成「點了又點到外部」而立刻關閉，導致
-    看起來「點了沒反應」。更穩定的做法：先點一次觸發鈕讓它拿到 focus，接著
-    用 `electron_press_key(key: "Enter")` 開啟，選項用
-    `electron_click_by_text` 或 CSS selector（如
-    `[role="menuitem"]:nth-of-type(2)`）點擊。
-  - 原生/Radix `<Select>` combobox 同理：點開後對選項用
-    `electron_click_by_text` 常因為多個相近文字元素分數相近而點不中；改成
-    「點開 combobox → `electron_press_key(Enter)` 選中目前高亮/預設的第一個
-    選項」，或用 CSS selector 精準指定。
-  - `electron_click_by_text` 對「包含中文字的較長字串」有時會因為內部拿去做
-    `btoa` 編碼而直接丟出 `Latin1 range` 錯誤——這是工具本身的限制，不是操作
-    錯誤，遇到就直接改用 `electron_click_by_selector` 配 CSS selector（`role`
-    屬性、`:nth-of-type`、`#id` 皆可）繞過，不需要重試原本的呼叫。
-  - 同一畫面出現多個文字相同/相近的按鈕（例如商品搜尋跟會員搜尋都有一顆
-    「查詢」按鈕）時，`electron_click_by_text` 可能命中錯的元素。優先用
-    `electron_fill_input` 鎖定該欄位、搭配 `electron_press_key(Enter)` 在該
-    輸入框內送出，避免依賴按鈕文字比對。
-  - **同一畫面疊了多層 Dialog、且文字相同的按鈕（如「退貨」）分別出現在不同
-    層時，`electron_click_by_text` 可能命中背景那層而非目前作用中的那層**，
-    且呼叫結果仍回報「成功點擊」不會報錯，很容易誤判成流程已送出、實際上
-    什麼都沒發生（已實測：查 DB 發現資料根本沒寫入才發現點錯層）。
-    保險做法：改用 `electron_eval` 直接沿 DOM 結構定位（例如「緊接在金額
-    輸入框旁邊的那顆紅色按鈕」），不要單純比對文字。**`electron_eval` 的
-    安全掃描器會擋下任何含 `=` 字元的程式碼**（連 CSS attribute selector
-    如 `input[type="number"]` 都會被誤判成賦值操作而擋下），要改用不含 `=`
-    的寫法，例如：
-    ```js
-    document.getElementsByTagName('input')[4].parentElement.getElementsByClassName('bg-destructive')[0].click()
-    ```
-    用陣列索引取代 attribute selector、只用 `.click()` 這類無賦值語句。
-  - **數字鍵盤（登入員編、機台代號輸入）如果在同一次工具呼叫裡連續塞多個
-    `electron_click_by_text` 按鍵，會被防連點機制擋下大半**（回報
-    `Element click prevented - too soon after previous click`，只有第一個
-    生效）。逐位數字 MUST 拆成一次一個獨立呼叫，不要批次塞在同一個 message
-    裡送出。
-  - **日期範圍選擇器是 shadcn `Calendar` popover，不是純文字輸入框**：點擊
-    日期文字按鈕開啟月曆後，用 `electron_click_by_selector` 點
-    `button.rdp-button_previous` / `.rdp-button_next` 切換月份，再用
-    `electron_click_by_text` 點日期數字。
-- **需要「跨發票配號週期」的測試情境時，不要竄改系統時間，改查本地 DB 找現成
-  的舊期別資料**：
-  ```sql
-  SELECT name, issue_invoice_name, paid_at, total FROM offline_sale
-  WHERE invoice_type = 'EGUI' AND issue_invoice_name IS NOT NULL
-  ORDER BY paid_at ASC LIMIT 10
-  ```
-  找一筆 `paid_at` 落在兩個雙月期別之前的已完成銷售單，直接對它操作退貨即可
-  自然觸發跨週期折讓邏輯，不需要動系統時鐘或竄改資料。
-- **「商品」與「美容」的退換貨查詢是兩個完全獨立的對話框與 store**：商品側
-  入口是功能選單「商品」頁籤的「銷售查詢(退換貨)」
-  （`useReturnExchangeStore`），美容側要先切到功能選單「美容」頁籤才會出現
-  獨立的「銷售查詢(退換貨)」入口（`useSalonReturnExchangeStore`）。**這兩個
-  對話框不會依原始銷售單的 `sale_kind` 自動分派**——若在「商品」入口對一筆
-  `sale_kind = 'SERVICE'` 的美容銷售單退貨，但退的剛好是該單裡搭賣的實體
-  商品明細行，寫入的 `offline_return.sale_kind` 會是 `'ITEM'`，**不會**走到
-  美容側的 `resolveOfflineReturnName` 呼叫路徑（已實測踩過一次）。
-  要驗證美容側邏輯，MUST 先確認要退的單子是**純服務項目**（可用 SQL 查
-  `(SELECT COUNT(*) FROM offline_sale_lines_items WHERE offline_sale_name = s.name)`
-  是否為 0，排除混雜商品加購的單），並從「美容」頁籤的入口進入。
-- **觸發任何實體列印流程（折讓證明單、發票、小白單……）在沒有連接實體 POS
-  印表機的本機 macOS 開發環境下，會讓整個 renderer 的 JS event loop 凍結**
-  （`electron_take_screenshot`／`electron_eval` 的 CDP `Runtime.evaluate`
-  全部逾時），且**單獨 kill 列印用的 utility 子程序（
-  `printing.mojom.UnsandboxedPrintBackendHost`）救不回來**，因為卡住的是
-  原生系統列印對話框，不在 CDP 可控範圍。已實測的唯一解法：整個 kill 掉
-  Electron 主程序重啟：
-  ```bash
-  pkill -9 -f "electron/dist/electron/main/main.js"
-  ```
-  重啟後常見 `next dev` 殘留佔用 3100 埠（`EADDRINUSE`），重跑
-  `npm run dev` 前先 `lsof -ti:3100` 找出殘留的 `next-server` 行程 kill 掉。
-  **實務上最好的因應方式是提前避開**：只要驗收條件不是明確要求「確認列印
-  出的紙本內容」，優先用 SQL 查資料庫本身的欄位值（如 `credit_note_no`／
-  `credit_note_id`）驗證邏輯正確性，不要點會觸發列印的「確認完成」之類
-  按鈕；真的需要驗證紙本格式時，改用程式碼追蹤鏈（讀版面組裝函式，確認
-  欄位值是否原樣輸出無格式化）取代實際觸發列印，並在報告中如實標註是用
-  程式碼論證而非肉眼比對紙本。
-- **涉及正式環境（production）的驗收條件**：Claude Code 的自動模式分類器會
-  直接擋下對 production 的查詢/寫入動作（不論是透過 `javacat_switch_environment
-  (env: "production")` 還是其他工具），這是平台層級的安全政策，**不是**工具
-  故障，也**不要**嘗試繞過（換帳號、換工具、用別的環境的憑證硬闖）。這類條件
-  一律標記「⚠️ 無法驗證（Claude Code 權限限制擋下 production 查詢，需使用者
-  親自確認或明確授權後再繼續）」，並清楚告知使用者卡在哪一步，交由使用者
-  親自確認或明確指示如何處理。
+### 5.2 操作與證據
+
+1. 依 Step 4 的步驟，用 `ragdoll-electron` 系列工具實際操作。
+2. `read_electron_logs` 確認主控台；`ragdoll-sqlite-*` 的 `query` 確認資料落地（唯讀）。
+3. **截圖存檔**：對應每條驗收條件的關鍵畫面，一律用 `electron_take_screenshot` 的 `outputPath` 存到暫存目錄，檔名帶卡號與條件編號（如 `RD-8427-c1-paid-cross-store.png`）。事後留言（Step 6b）要用，不要只留在對話裡。
+4. 版面類條件先 `electron_get_viewport_size`：門市標準是 1024×768（DPR 2），在這個尺寸觀察才算數。
+5. **操作鐵則**（細節與已知坑見 `references/electron-tool-pitfalls.md`）：
+   - 工具回報「成功」≠ 狀態真的變了；每個關鍵點擊後截圖或讀狀態確認。
+   - selector 先確認唯一（用 `electron_get_page_structure` 的 className 組合）。泛用 selector 會點到被彈窗遮住的背景元素。
+   - 不要為了收尾去點「取消銷售」「確認結帳」「後付款」；不付款收尾用 **Escape** 逐層退出（結算彈窗按 Escape ＝放棄帶入）。
+   - 完成結帳／付款需使用者同意（見授權分界）；條件不是非看落地資料不可時，用論證或模擬資料法。
+   - **觸發實體列印會凍住整個 renderer**（Mac 開發環境無印表機）：條件不是明確要求確認紙本內容就不要點，改用 SQL 或程式碼論證（見 pitfalls 末節）。
+
+### 5.3 涉及正式環境（production）
+
+Claude Code 的自動模式分類器會直接擋下對 production 的查詢與寫入（不論透過 `javacat_switch_environment(env: "production")` 或其他工具）。這是平台層級的安全政策，**不是**工具故障，**不要**嘗試繞過（換帳號、換工具、用別環境的憑證硬闖）。這類條件標 ⚠️ 無法驗證（Claude Code 權限限制擋下 production 查詢，需使用者親自確認或明確授權後再繼續），並告知使用者卡在哪一步。
 
 ---
 
-## Step 6：判定與回報（agent 不可留言 Jira）
+## Step 6：判定與回報（預設不留言 Jira）
 
-每條驗收條件**只能**標記以下三態之一，**MUST NOT** 發明「部分驗證」「大致通過」
-之類的模糊第四態來迴避給結論——使用者要的是「到底過了沒」，含糊的中間態等於
-沒有回答問題：
+每條驗收條件**只能**標三態之一，**MUST NOT** 發明「部分驗證」「大致通過」之類的第四態——使用者要的是「到底過了沒」：
 
-- ✅ **通過** — 實際操作結果與條件描述一致（含條件本身就是在測「未開帳/未登入」
-  等邊界狀態、且實際行為符合預期的情況）
-- ❌ **不通過** — 實際操作結果與條件描述不符（含條件本身就是在測邊界狀態、但
-  實際行為不符合預期的情況——**這類判定不得因為環境「未開帳/未登入」而改標
-  「無法驗證」，因為未開帳/未登入正是條件本身要求的測試情境**）
-- ⚠️ **無法驗證** — 手冊/文件依據找不到（Step 4 fallback 鏈都查過仍然空白）、
-  環境一致性有疑慮（Step 0b 第 3 點）、條件本身不是在測邊界狀態卻因環境未就緒
-  導致操作失敗（Step 0b 第 2 點），或涉及被平台權限擋下的 production 查詢
-  （Step 5 最後一點）
+- ✅ **通過** — 實際結果與條件一致（含條件本身就在測未開帳／未登入等邊界狀態、且行為符合預期）。
+- ❌ **不通過** — 實際結果與條件不符（含邊界狀態條件行為不符；**不得**因環境未開帳／未登入改標「無法驗證」，因為那正是條件要求的情境）。
+- ⚠️ **無法驗證** — 找不到操作方式的文件依據（Step 4 都查過）、環境一致性有疑慮（Step 0b 第 3 點）、條件不是在測邊界狀態卻因環境未就緒而操作失敗且自己建不起來（Step 0b 第 2 點），或涉及被平台擋下的 production 查詢（Step 5.3）。
 
-**「純函式論證法」——當某條件描述的邊界狀態，安全地人工重現需要對共用/正式
-資料做有風險的異動時使用：**
+**證據等級**（與三態並列，不是第四態；每條在「驗證方式」欄標明，讓 ✅ 的強度看得見）：
 
-有些驗收條件描述的邊界狀態（例如「查詢會員失敗時」），在測試環境中要嚴格
-按照字面重現，得讓某筆真實資料在操作當下真的變得「查不到」——這通常代表要
-去改動其他 session 也在用的共用本機 DB，或去停用/啟用正式環境的測試帳號。
-**不要**為了硬湊實機重現而執行這類有風險的資料異動（見 Step 0b 的共用 DB
-警告）。改用以下推論鏈，一樣可以得出可稽核、有信心的 ✅/❌ 結論：
+| 等級 | 說明 |
+|---|---|
+| 實機·真實資料 | 真實 dev 資料與流程 |
+| 實機·模擬資料 | 真實元件與流程，但查詢回應在記憶體中被改寫；報告 MUST 明講改寫了什麼 |
+| 論證 | 純函式論證或程式碼追蹤，無實機畫面 |
 
-1. 用 Step 3 找到的核心函式，確認它是「純函式」：輸出只由某個 state（例如
-   `member`）決定，程式碼裡**沒有**「查詢成功走一條路、查詢失敗走另一條路」
-   的額外分支——不論這個 state 是「一開始就沒有」還是「查詢失敗變成沒有」，
-   函式吃到的輸入都是同一個值，行為必然相同。
-2. 分別驗證這支函式在「該輸入為有效值」與「該輸入為 null/空」兩種真實輸入下
-   的實際輸出——即使是透過**不同的呼叫路徑**各驗證一種也算數（例如：從一般
-   非會員結帳驗證 `member = null` 時的輸出，從暫結還原/換購驗證
-   `member = 有效會員` 時的輸出）。
-3. 兩種輸入都驗證過、且呼叫端在觸發「失敗」情境時同樣會把 state 設回同一個
-   null/空值（於 Step 3 的 diff 閱讀中確認呼叫順序），即可合併推論：「查詢
-   失敗」這個特定成因下的行為，等同於「輸入為 null」這個已驗證過的情況，
-   可以據此下 ✅（或 ❌，如果驗證結果不符預期）的結論。
-4. **回報時把這條推論鏈寫出來**（哪個函式、驗證了哪兩種輸入、呼叫順序如何
-   確認），不能只寫「邏輯上應該沒問題」帶過——可稽核是重點，不是給個模糊
-   的正面印象。
+### 資料缺口時的兩種手段（優先序）
 
-回報格式：
+某條件描述的邊界資料在 dev 找不到，而安全地「真的造出來」需要寫共用資料時，**不要**硬湊實機重現的有風險寫入：
 
-```markdown
-## RD-XXXX 驗收結果
+1. **模擬資料法（優先）**：在主程序以 inspector 包住 IPC 處理器，只在記憶體改寫回應，真實元件渲染。畫面可截圖，證據等級＝「實機·模擬資料」。做法、腳本範本、注意事項見 `references/memory-fixture.md`（腳本 `scripts/inspector-eval.mjs`）。
+2. **純函式論證法**（模擬資料法不適用時，例如邊界狀態不是某個查詢回應造成的）：
+   1. 用 Step 3 找到的核心函式，確認它是「純函式」：輸出只由某個 state（如 `member`）決定，沒有「查詢成功／失敗」的額外分支——「一開始就沒有」與「查詢失敗變成沒有」餵給函式的是同一個值。
+   2. 分別驗證函式在「有效值」與「null／空」兩種真實輸入下的實際輸出（可經不同呼叫路徑各驗一種，例如一般非會員結帳驗 `member = null`，暫結還原／換購驗 `member = 有效會員`）。
+   3. 在 Step 3 的 diff 閱讀中確認呼叫端在「失敗」情境同樣把 state 設回同一個 null／空值（確認呼叫順序），即可合併推論。
+   4. 報告 MUST 寫出推論鏈（哪個函式、驗了哪兩種輸入、呼叫順序如何確認），不能只寫「邏輯上應該沒問題」。
 
-| # | 驗收條件 | 結果 | 驗證方式 | 判定依據 |
-|---|---|---|---|---|
-| 1 | <條件文字> | ✅ 通過 | 畫面 + SQL | <截圖描述 / log 摘錄 / SQL 查詢結果，或純函式論證鏈> |
-| 2 | <條件文字> | ❌ 不通過 | 畫面 | <具體不符現象> |
+### 回報
 
-### 補充查核（description/正確行為提及、但驗收條件清單未單獨列出的路徑）
+報告骨架（條件表＋證據等級、補充查核、自動化測試、**環境副作用**、建議補手冊、待確認、建議留言草稿）與留言草稿範本見 `references/report-and-comment.md`。
 
-| 路徑 | 結果 | 判定依據 |
-|---|---|---|
-| <從 description 讀到的額外根因路徑> | ✅ 通過 | <diff 追蹤鏈或實機驗證> |
-```
+**預設 MUST NOT 呼叫任何 Jira 寫入工具**（`addCommentToJiraIssue`、`addOrEditJiraIssueComment`、`editJiraIssue`、`createJiraIssue`、`transitionJiraIssue`、`addWorklogToJiraIssue`、附件上傳）。把表格與草稿回報給使用者，等使用者明確要求才進 Step 6b。委派給 `ragdoll-acceptance-qa` subagent 時，這是該 agent 工具集的限制；由 orchestrator 或本 session 直接執行 SOP 時，是這條規則——**即使沒有 subagent 也一樣**。
 
-**MUST NOT 呼叫任何 Jira 寫入工具**（`addCommentToJiraIssue`、`editJiraIssue`、
-`createJiraIssue`、`transitionJiraIssue`、`addWorklogToJiraIssue`）。把上表 +
-一份「建議留言草稿」文字一併回報給 orchestrator（呼叫你的上層對話），由
-orchestrator 詢問使用者是否同意留言、同意後才由 orchestrator 自己呼叫留言工具。
-這條規則不是「請不要做」的提醒，而是這個 agent 的工具集本身就不包含 Jira 寫入
-工具（見 `ragdoll-acceptance-qa` agent 定義）。
+---
+
+## Step 6b：留言與截圖（僅在使用者明確要求時）
+
+使用者明確要求留言（含「附上關鍵截圖」這類交辦），並指明哪張票時才做。留言與上傳是對外發布，不屬於驗收本身。
+
+1. **選圖**：2–3 張，各對應一條或一組驗收條件；邊界或模擬類的補充圖寫進文字即可。每張先 `Read` 確認不含完整手機、地址、會員全名；有的話先遮蔽**副本**（用 PIL，不要用 `sips`，見 reference）。
+2. **上傳並留言**：兩階段上傳取 `fileId`，以 `inlineFileId` 內嵌到 HTML 留言（**不要**再跑階段二，否則重複附檔）。流程與參數見 `references/report-and-comment.md` §三。
+3. **內文寫給 PM／QA 看得懂的業務語言**（不要程式碼、函式名）；明講哪些是模擬資料；列出待確認事項。
+4. **讀回確認**：留言內文完整、內嵌圖數正確、附件 `size` 與本機一致；回報 `commentId`。
 
 ---
 
 ## Step 7：驗收結束後清理環境
 
-只在使用者明確表示「驗收完成」或要求清理時才執行，不要在 Step 6 回報完就自動
-清掉——使用者可能還要接著人工複查畫面。
+只在使用者明確表示「驗收完成」或要求清理時才做（含「留言完成後就清理」這類交辦），不要在 Step 6 回報完就自動清掉——使用者可能還要人工複查畫面。
 
-1. 停止背景執行的 `npm run dev`（用 `TaskStop` 停掉對應的背景任務），並用
-   `pkill -9 -f "electron/dist/electron/main/main.js"` /
-   `pkill -9 -f "next dev -p 3100"` 等指令確認沒有殘留綁定該 worktree 路徑的
-   Electron/Next 程序（`npm run dev` 的子程序有時不會隨父殼一起結束，`ps aux`
-   grep worktree 路徑二次確認）。
-2. 先確認 worktree 裡沒有你自己產生的未推送內容——比對 worktree 目前 HEAD 與
-   遠端對應分支（`origin/<branch>`，`git fetch` 後 `git rev-parse` 比對）的
-   commit hash 是否**完全一致**。一致才代表這個 worktree 除了 checkout 既有
-   分支之外沒有任何屬於這次驗收工作自己產生的東西，可以安全清除；不一致（有
-   你自己的 commit 或未提交變更）就不要清除，明確告知使用者 worktree 路徑。
-3. **清除方式依 Step 0a 用哪種方式建立這個 worktree 而不同**：
-   - 若是用 `EnterWorktree({name})` 新建分支建立 → 用
-     `ExitWorktree(action: "remove", discard_changes: true)` 即可。
-   - **若是依 Step 0a「補充」段落用手動 `git worktree add` + 再
-     `EnterWorktree({path})` 進入的既有分支**（已實測案例，PR
-     仍是 open 狀態時的標準做法）→ `ExitWorktree(action: "remove")`
-     **會被拒絕**，錯誤訊息是「This session is not the owner of the
-     worktree」，因為該工具的移除權限只認自己用 `{name}` 建立的 worktree。
-     正確流程：先 `ExitWorktree(action: "keep")` 讓 session 退回原本的
-     working directory，再手動執行：
-     ```bash
-     git worktree remove .claude/worktrees/<自訂名稱>
-     git branch -d <分支名稱>   # 順手清掉本機追蹤分支（沒有額外 commit 時安全）
-     ```
+1. **還原模擬資料**（若有用）：跑 `restore.js`，確認 `restored: true`，再跑 `hits.js` 確認 `wrapped: false`。
+2. **停行程（用明確 PID）**：若 dev 是依 Step 0a-2 直接以 `run_in_background` 啟動的，先 `TaskStop` 該背景任務；`npm run dev` 的子行程有時不會隨父殼結束，所以一律再做下面的核對與清除：
+   ```bash
+   ps -eo pid,ppid,etime,command | grep <worktree 名>     # 列出自己 worktree 的行程
+   kill <PID…>                                            # 先 SIGTERM
+   lsof -nP -iTCP -sTCP:LISTEN | grep -E ":3100|:9222|:9229"   # 確認埠釋放；Next 的 PID 常不含 worktree 路徑，要靠埠找
+   ```
+   - **MUST NOT** 用 `pkill -9 -f "electron/dist/…"`／`pkill -f "next dev …"`：會殺掉整台機器上**所有** Ragdoll（含使用者或其他 session 的視窗）；`-f <worktree 名>` 還會比對到自己的 shell。
+   - 本機 SQLite 是各 session 共用的，強殺（`-9`）可能留下沒寫完的 WAL；只有 SIGTERM 後仍殘留、且確認屬自己的 worktree 才用 `-9`（列印卡死是例外，見 pitfalls）。
+3. **確認沒有自己的內容**：`git fetch origin <分支>`，`git rev-parse HEAD` 與 `FETCH_HEAD` **完全一致**，且 `git status --short` 為空 → 可安全移除。不一致（有你自己的 commit 或未提交變更）就不要清，告知使用者 worktree 路徑。
+4. **移除 worktree**（依建立方式）：
+   - 用 `EnterWorktree({name})` 建的 → `ExitWorktree(remove, discard_changes: true)`。
+   - 用 `git worktree add` ＋ `EnterWorktree({path})` 進入的（Step 0a-2 的預設做法）→ `ExitWorktree(remove)` 會被拒（「not the owner」）。先 `ExitWorktree(keep)` 退回原目錄，再在**主 checkout** 用絕對路徑執行 `git worktree remove <路徑>`。`node_modules` 與 build 產物是 ignore 檔，**不需要 `--force`**；git 若拒絕，先看原因，不要盲目加 `--force`。用 `--detach` 建的沒有本機分支要刪。
+5. **核對**：`git worktree list` 不再有該 worktree，主 checkout `git status` 乾淨。
+6. **維持不動**：今日日結（開帳中是機台正常狀態，不要關）、其他 session 的 worktree 與行程。暫存目錄隨 job 清掉，需要留的證據應已在 Jira。
+7. 最終回報列出清理結果，以及仍保留的狀態。
+
+---
+
+## 檔案索引
+
+| 檔案 | 何時讀 |
+|---|---|
+| `references/electron-tool-pitfalls.md` | Step 5 操作前掃一遍；點擊或輸入不如預期時 |
+| `references/test-data-recipes.md` | Step 5.1 盤點資料；發票條碼、跨配號週期、退換貨分流 |
+| `references/memory-fixture.md`、`scripts/inspector-eval.mjs` | Step 6 資料缺口時的模擬資料法 |
+| `references/report-and-comment.md` | Step 6 報告骨架；Step 6b 留言與截圖流程、範本 |
