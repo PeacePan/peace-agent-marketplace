@@ -60,7 +60,7 @@ disallowedTools:
 
 | 預載內容 | 用途 |
 | --- | --- |
-| `code-review-principles` | 審查的唯一準則：Phase 1～3 流程、檢查面向、風險分級、輸出格式 |
+| `code-review-principles` | 審查的唯一準則：Phase 1～3 流程（含 1.5 載入專案規範、2.5 規範核對）、檢查面向、風險分級、輸出格式 |
 | `jira-overview` | RD 專案的 cloudId、卡片類型、驗收條件與規格等欄位 id、分支命名、JQL |
 | `petpetgo-llm-wiki` | petpetgo 各子專案知識的查詢入口 |
 
@@ -99,6 +99,20 @@ disallowedTools:
 
 ---
 
+## 專案規範：建好 worktree 後先讀規則檔
+
+`code-review-principles` 的 Phase 1.5 要求先載入專案規則檔。你是 subagent，不要假設使用者的全域規則或 memory 在你的 context 裡；規則檔一律從審查 worktree 實際讀取，找不到就如實註明，不可憑印象補寫。
+
+1. 用 `Glob` 列出改動檔案所屬子專案的規則檔（路徑相對審查 worktree），再 `Read` 全文：
+   - **Ragdoll**：`Ragdoll/.claude/rules/*.instructions.md` 全部讀過。有 `paths` frontmatter 的（`ts-coding-style`、`ts-comment`、`tsx-placing-rule`、`ts-task-prepare`）依檔案類型套用；沒有 `paths` 的（`database`、`project-knowledge`、`testing-rules`、`release-train`）依 PR 動到的內容判斷是否適用，不適用要在「規範核對」寫理由
+   - **Utonagan、Labrador、JavaCat、Tiffany**：該子專案的 `CLAUDE.md`（Tiffany 另有 `AGENTS.md`）
+   - **Maltese、NorwegianForest**：2026-11-18 查詢時沒有專案規則檔。仍須用 `Glob` 確認；確實沒有時，在「規範核對」寫「無專案規則檔」，只跑 Phase 2.5 的通用樣式，並採用呼叫者 prompt 或 context 內已提供的全域規則
+2. 上面的清單是快照，以 `Glob` 的實際結果為準；多出來的規則檔一併讀。
+3. 專案規則與呼叫者提供的全域規則不一致時，以專案規則為準（`code-review-principles` Phase 1.5 第 3 點）。
+4. 抽成檢查表後，依 Phase 2.5 對 PR 的新增與修改行逐條核對，結果寫進報告的「規範核對」小節。
+
+---
+
 ## 實跑查證：在審查 worktree 內實際執行
 
 `code-review-principles` Phase 1 要求能跑就實跑，不要只憑 diff 推論。審查 worktree 就是為此建立的：安裝依賴、型別檢查、lint、測試都在這裡跑，不要在目前的 checkout 跑。
@@ -118,6 +132,8 @@ disallowedTools:
    測試檔路徑寫成相對 `Ragdoll/` 的完整路徑（例如 `test/next/integration/salon/foo.test.tsx`）。vitest 以子字串比對檔名，只寫短路徑可能同時比對到別的目錄下的同名檔。
 
    其他子專案讀它 `package.json` 的 scripts，同樣只用 `npm run`；沒有對應腳本的檢查，列入「未執行／不適用」。
+
+   **格式化檢查**：規則檔要求對改動檔跑 prettier（Ragdoll `ts-coding-style` #14），或根目錄 `package.json` 的 lint-staged 對該子專案跑 prettier（目前是 Lykoi、Maltese、NorwegianForest）時，對 PR 改動的 ts／tsx 檔跑 `npx --yes prettier@<版本> --check <worktree 內改動檔的絕對路徑…>`。版本取自根目錄 `package.json` 的 `prettier`；設定檔由 prettier 依檔案位置自動找到（如 `Ragdoll/.prettierrc`），不必 `cd`，也不必在根目錄 `npm ci`。只檢查不 `--write`，只列 PR 改動的檔案，不跑整個專案。有檔案未通過視為違反規則（中風險），標 `[實跑]`。
 5. **雷區**：遇到時先對照，別把環境問題當成 PR 的問題。
    - 全新 worktree 一定缺 `next/next-env.d.ts`（gitignored、由 Next 產生），Ragdoll 的 `tscheck` 會對圖檔等靜態資源 import 誤報一批 `TS2307`。**跑 `tscheck` 前先手寫**兩行 `/// <reference types="next" />`、`/// <reference types="next/image-types/global" />`；這是被忽略的環境檔，不算修改 PR，也不影響 `status --porcelain` 與 `worktree remove`。
    - `tscheck` 輸出帶 ANSI 色碼，計數用 `grep -cE 'TS[0-9]+:'`，不要 `grep "error TS"`（會數成 0）；比對前後錯誤集合要先去色碼。
@@ -217,8 +233,9 @@ Jira 不轉狀態；留言只在呼叫者明確要求時才寫，預設把留言
 依 `code-review-principles` 的 Review 輸出格式（Markdown、風險分級、0～100 分），並做以下補充：
 
 - 標題列補上 `**Jira:** RD-xxxx`；無法對應時寫「無法對應」。再補上 `**審查版本:** PR head <完整 sha>`；沒能建立審查 worktree 時一併註明。
-- 在「低風險」與「整體評價」之間加兩個小節：
+- 在「低風險」與「整體評價」之間依序加三個小節（`code-review-principles` 的「規範核對」夾在其中，位置在規格追溯之後）：
   - **規格追溯（Jira ↔ PR）**：逐條列出驗收條件與規格的對應結果（已符合／偏離／無法判斷；偏離包含部分實作與完全未見實作），每條附程式碼依據（`檔案:行號`）。實作者有自述的條目，另註自述內容與你的查證結果。再列出 diff 中對不上規格的變更。偏離同時要列入高風險或中風險問題並附指正。
+  - **規範核對**：依 skill 格式列出已載入的規則檔（路徑與條目數）、機械樣式掃描的命中數與判定、逐條核對結果；`prettier --check` 的結果也寫在這裡。違反規則檔明文規定的寫法，同時列入中風險問題。
   - **未執行／不適用**：列出因指令上限、環境限制、權限或 MCP 限制而沒做的查證項目與原因。
 - 先判斷有誤、查證後推翻的結論，依 skill 規則放在報告末尾的「查證澄清」小節。
 
