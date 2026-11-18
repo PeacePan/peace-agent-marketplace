@@ -133,7 +133,16 @@ disallowedTools:
 
    其他子專案讀它 `package.json` 的 scripts，同樣只用 `npm run`；沒有對應腳本的檢查，列入「未執行／不適用」。
 
-   **格式化檢查**：規則檔要求對改動檔跑 prettier（Ragdoll `ts-coding-style` #14），或根目錄 `package.json` 的 lint-staged 對該子專案跑 prettier（目前是 Lykoi、Maltese、NorwegianForest）時，對 PR 改動的 ts／tsx 檔跑 `npx --yes prettier@<版本> --check <worktree 內改動檔的絕對路徑…>`。版本取自根目錄 `package.json` 的 `prettier`；設定檔由 prettier 依檔案位置自動找到（如 `Ragdoll/.prettierrc`），不必 `cd`，也不必在根目錄 `npm ci`。只檢查不 `--write`，只列 PR 改動的檔案，不跑整個專案。有檔案未通過視為違反規則（中風險），標 `[實跑]`。
+   **格式化檢查**：規則檔要求對改動檔跑 prettier（Ragdoll `ts-coding-style` #14），或根目錄 `package.json` 的 lint-staged 對該子專案跑 prettier（目前是 Lykoi、Maltese、NorwegianForest）時，對 PR 改動的 ts／tsx 檔跑 `npx --yes prettier@<版本> --check <worktree 內改動檔的絕對路徑…>`。版本取自根目錄 `package.json` 的 `prettier`；設定檔由 prettier 依檔案位置自動找到（如 `Ragdoll/.prettierrc`），不必 `cd`，也不必在根目錄 `npm ci`。只檢查不 `--write`，只列 PR 改動的檔案，不跑整個專案。
+
+   repo 內有些既有檔案原本就不符 prettier（Ragdoll `testing-rules` 有提到測試檔的情況），所以 head 未通過的檔案要再查 base 版本，只有「base 通過、head 未通過」才是本 PR 引入的違規（中風險，標 `[實跑]`）：
+
+   ```bash
+   # 退出碼 0 = base 版本符合格式；1 = base 本來就不符合（既有偏差，不計入發現，只在「規範核對」註記）
+   git -C <worktree> show origin/<base>:<子專案>/<路徑> | npx --yes prettier@<版本> --check --stdin-filepath <worktree 內該檔的絕對路徑>
+   ```
+
+   `--stdin-filepath` 必須指到 worktree 內該檔的路徑：prettier 依這個路徑往上找設定檔。不要把 base 內容存到 `/tmp` 等專案外的檔案再檢查，會吃到預設值（`printWidth: 80`），讓每個檔案都被判成不符格式。PR 新增的檔案沒有 base 版本，head 未通過就直接算違規。
 5. **雷區**：遇到時先對照，別把環境問題當成 PR 的問題。
    - 全新 worktree 一定缺 `next/next-env.d.ts`（gitignored、由 Next 產生），Ragdoll 的 `tscheck` 會對圖檔等靜態資源 import 誤報一批 `TS2307`。**跑 `tscheck` 前先手寫**兩行 `/// <reference types="next" />`、`/// <reference types="next/image-types/global" />`；這是被忽略的環境檔，不算修改 PR，也不影響 `status --porcelain` 與 `worktree remove`。
    - `tscheck` 輸出帶 ANSI 色碼，計數用 `grep -cE 'TS[0-9]+:'`，不要 `grep "error TS"`（會數成 0）；比對前後錯誤集合要先去色碼。
