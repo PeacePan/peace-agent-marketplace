@@ -16,6 +16,8 @@
 
 `/plugin install utonagan-workspace@wonderpet-agent-plugins`
 
+`/plugin install van-workspace@wonderpet-agent-plugins`
+
 `/plugin install wonderpet-general@wonderpet-agent-plugins`
 
 ## 更新 Plugin
@@ -27,6 +29,8 @@
 `/plugin update ragdoll-workspace@wonderpet-agent-plugins`
 
 `/plugin update utonagan-workspace@wonderpet-agent-plugins`
+
+`/plugin update van-workspace@wonderpet-agent-plugins`
 
 `/plugin update wonderpet-general@wonderpet-agent-plugins`
 

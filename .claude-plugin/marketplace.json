@@ -26,6 +26,11 @@
       "description": "Utonagan 專案開發專用工具包"
     },
     {
+      "name": "van-workspace",
+      "source": "./plugins/van-workspace",
+      "description": "Van 專案開發專用工具包"
+    },
+    {
       "name": "wonderpet-general",
       "source": "./plugins/wonderpet-general",
       "description": "萬達寵物通用 AI 工具包"
