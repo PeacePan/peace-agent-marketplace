@@ -41,7 +41,7 @@ background: true
 
 ## 拿不到 Playwright 工具時
 
-Playwright 工具在清單中可能只以名稱出現（deferred 狀態），要先用 `ToolSearch`（關鍵字 `playwright`）載入才能呼叫。**先查過 `ToolSearch`**，仍找不到 `browser_*`（完整名稱形如 `mcp__plugin_utonagan-workspace_utonagan-playwright__browser_navigate`）時，才不要重試、不要嘗試替代做法，回報「此次委派沒有拿到 Playwright 工具」，由 orchestrator 在自己的 session 直接執行整套 SOP。
+Playwright 工具在清單中可能只以名稱出現（deferred 狀態），要先用 `ToolSearch`（關鍵字 `playwright`）載入才能呼叫。**先查過 `ToolSearch`**，仍找不到 `browser_*`（完整名稱形如 `mcp__plugin_wonderpet-general_playwright__browser_navigate`）時，才不要重試、不要嘗試替代做法，回報「此次委派沒有拿到 Playwright 工具」，由 orchestrator 在自己的 session 直接執行整套 SOP。
 
 ## 完整流程
 

@@ -8,6 +8,8 @@
 
 ---
 
+`/plugin install abyssinian-workspace@wonderpet-agent-plugins`
+
 `/plugin install maltese-workspace@wonderpet-agent-plugins`
 
 `/plugin install norwegianforest-workspace@wonderpet-agent-plugins`
@@ -21,6 +23,8 @@
 `/plugin install wonderpet-general@wonderpet-agent-plugins`
 
 ## 更新 Plugin
+
+`/plugin update abyssinian-workspace@wonderpet-agent-plugins`
 
 `/plugin update maltese-workspace@wonderpet-agent-plugins`
 

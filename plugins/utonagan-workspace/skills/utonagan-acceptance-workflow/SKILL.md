@@ -22,10 +22,10 @@ Step 1 的範圍判斷只需要 Jira 的唯讀查詢，不依賴瀏覽器與 dev
 | 檢查項 | 方法 | 缺失時的訊息 |
 |---|---|---|
 | `wonderpet-general:jira-overview` skill | 用 `Skill` 工具載入 | 「缺少 wonderpet-general plugin（找不到 jira-overview skill），請先安裝該 plugin」 |
-| Playwright MCP | 呼叫 `browser_navigate` 到 `http://localhost:4100/login` | 工具不存在：「請確認 utonagan-workspace plugin 已啟用，並用 `/mcp` 檢查 utonagan-playwright 的狀態」；工具存在但瀏覽器無法啟動：「Playwright 需要 Google Chrome，請安裝，或在 plugin 的 `.mcp.json` 以 `--browser` 指定其他瀏覽器」；工具存在但頁面連不上：「Utonagan 尚未啟動，請先在 Utonagan 目錄執行 `npm run dev`」 |
+| Playwright MCP | 呼叫 `browser_navigate` 到 `http://localhost:4100/login` | 工具不存在：「請確認 wonderpet-general plugin 已啟用，並用 `/mcp` 檢查 playwright 的狀態」；工具存在但瀏覽器無法啟動：「Playwright 需要 Google Chrome，請安裝，或在 wonderpet-general plugin 的 `.mcp.json` 以 `--browser` 指定其他瀏覽器」；工具存在但頁面連不上：「Utonagan 尚未啟動，請先在 Utonagan 目錄執行 `npm run dev`」 |
 | Node 版本 | `node --version` | 必須落在 `>=22 <=24` |
 
-Playwright 工具的完整名稱形如 `mcp__plugin_utonagan-workspace_utonagan-playwright__browser_navigate`，本文以短名 `browser_*` 稱呼。這些工具在工具清單中可能是 **deferred** 狀態：只有名稱、沒有參數定義，第一次呼叫前要先用 `ToolSearch` 以 `select:<完整名稱>` 載入，否則呼叫會失敗。**在判斷「沒有拿到 Playwright 工具」之前，一定要先用 `ToolSearch`（關鍵字 `playwright`）查過。**Jira MCP 的可用性由 Step 1 實際查卡一併驗證。
+Playwright 工具的完整名稱形如 `mcp__plugin_wonderpet-general_playwright__browser_navigate`，本文以短名 `browser_*` 稱呼。這些工具在工具清單中可能是 **deferred** 狀態：只有名稱、沒有參數定義，第一次呼叫前要先用 `ToolSearch` 以 `select:<完整名稱>` 載入，否則呼叫會失敗。**在判斷「沒有拿到 Playwright 工具」之前，一定要先用 `ToolSearch`（關鍵字 `playwright`）查過。**Jira MCP 的可用性由 Step 1 實際查卡一併驗證。
 
 **沒有 SQLite 與本機資料庫**：Utonagan 是純 web 前端，所有資料都來自中台；資料層的確認改用 `browser_network_requests` 與 `browser_console_messages`。
 

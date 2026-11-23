@@ -1,0 +1,37 @@
+--- fake-javacat.ts
++++ fake-javacat-multi.mts
+@@ -256,10 +256,10 @@
+  * const [document] = await client.findDocuments({ table: 'pospromotion', includeLines: true });
+  * ```
+  */
+-export async function startFakeJavaCat(credentials: { accessKeyId: string; secretAccessKey: string }): Promise<FakeJavaCat> {
++export async function startFakeJavaCat(credentials: { accessKeyId: string; secretAccessKey: string }, port: number = 0): Promise<FakeJavaCat> {
+ 	const tables: Record<string, FakeRecord[]> = {};
+ 	const lines: Record<string, Record<string, Record<string, FakeRecord[]>>> = {};
+-	let sessionCookie: string | undefined;
++	const sessionCookies: Set<string> = new Set();
+ 	let findCount: number = 0;
+ 	let faults: FakeFaults = {};
+ 	let faultFindCount: number = 0;
+@@ -284,10 +284,10 @@
+ 		if (parsed.query.includes('signinByToken')) {
+ 			if (parsed.variables['accessKeyId'] !== credentials.accessKeyId || parsed.variables['secretAccessKey'] !== credentials.secretAccessKey)
+ 				return reply({ errors: [{ message: 'invalid credentials' }] });
+-			sessionCookie = req.headers.cookie;
++			if (req.headers.cookie !== void 0) sessionCookies.add(req.headers.cookie);
+ 			return reply({ data: { signinByToken: 'fake-token' } });
+ 		}
+-		if (req.headers.authorization !== 'Bearer fake-token' || req.headers.cookie !== sessionCookie)
++		if (req.headers.authorization !== 'Bearer fake-token' || !sessionCookies.has(req.headers.cookie ?? ''))
+ 			return reply({ errors: [{ message: 'unauthorized' }] });
+ 		findCount++;
+ 		faultFindCount++;
+@@ -352,7 +352,7 @@
+ 			res.end(String(error));
+ 		});
+ 	});
+-	await new Promise<void>((resolve: () => void): void => void server.listen(0, '127.0.0.1', resolve));
++	await new Promise<void>((resolve: () => void): void => void server.listen(port, '127.0.0.1', resolve));
+ 	const address: AddressInfo | string | null = server.address();
+ 	if (typeof address !== 'object' || address === null) throw new Error('假中台沒有取得連接埠');
+ 	return {
