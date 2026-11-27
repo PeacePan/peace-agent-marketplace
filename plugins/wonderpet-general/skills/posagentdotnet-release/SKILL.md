@@ -1,11 +1,27 @@
 ---
 name: posagentdotnet-release
-description: POSAgentDotNet（OldEnglish 的 .NET 門市地端代理程式，門市俗稱「小綠點」）發佈新版到 S3 的完整流程：打包（make-release.sh）、設定灰度（全部門市，或只限定某幾間門市先試裝的白名單，例如 POS0039FTEST）、用 aws login 取得 AWS 寫入憑證（不是 aws-mfa.cs）、dry-run 摘要確認、publish-release.sh 上傳、等門市機更新完成、再把線上 manifest 換回原版的暫時解法。涵蓋環境準備（.NET SDK 10、AWS CLI v2）、每個步驟的把關點與已踩過的雷。只要使用者提到發佈／上版／部署／推送 POSAgentDotNet 或小綠點的新版、Online Update、manifest、make-release／publish-release、「讓某間門市先裝這版」「只開放給 POS0039FTEST」「把 manifest 換回去」「退回 1.0.2」，或問 POSAgentDotNet 怎麼上線到門市，都應優先使用此 skill，即使沒有明說 S3。不適用於 Ragdoll、SyncAgent 等其他專案的發版，也不適用於門市第一次裝機用的 Windows 安裝包。
+description: POSAgentDotNet（OldEnglish 的 .NET 門市地端代理程式，門市俗稱「小綠點」）送新版到門市的完整流程，開頭先問使用者走哪一條：發佈到 S3 讓門市機線上更新，或在 Windows 建置機編出 Setup.exe 安裝包直接放到 POS 機安裝。S3 路線包含：打包（make-release.sh）、設定灰度（全部門市，或只限定某幾間門市先試裝的白名單，例如 POS0039FTEST）、用 aws login 取得 AWS 寫入憑證（不是 aws-mfa.cs）、dry-run 摘要確認、publish-release.sh 上傳、等門市機更新完成、再把線上 manifest 換回原版的暫時解法。涵蓋環境準備（.NET SDK 10、AWS CLI v2）、每個步驟的把關點與已踩過的雷。只要使用者提到發佈／上版／部署／推送 POSAgentDotNet 或小綠點的新版、Online Update、manifest、make-release／publish-release、「讓某間門市先裝這版」「只開放給 POS0039FTEST」「把 manifest 換回去」「退回 1.0.2」「出安裝包」「Setup.exe」「不經 S3 直接裝到 POS 機」，或問 POSAgentDotNet 怎麼上線到門市，都應優先使用此 skill，即使沒有明說 S3。不適用於 Ragdoll、SyncAgent 等其他專案的發版。
 ---
 
-# POSAgentDotNet 發佈（Online Update 上線）
+# POSAgentDotNet 發佈（Online Update 上線／Windows 安裝包）
 
-把 `OldEnglish/POSAgentDotNet` 的新版本送到門市。先建立三個觀念，後面的每一道把關都從這裡來：
+把 `OldEnglish/POSAgentDotNet` 的新版本送到門市，有兩條路。
+
+## 第一步：先問使用者走哪一條
+
+動手前先用 AskUserQuestion 問，兩個選項：
+
+| 路線 | 產出 | 在哪裡執行 | 什麼時候用 |
+|---|---|---|---|
+| **S3 Online Update** | 更新包 zip ＋ `manifest.json` 傳到 S3，門市機自己來拉 | macOS、Windows 皆可 | 門市機已經裝過小綠點，要讓它線上更新 |
+| **Windows 安裝包** | `POSAgentDotNet-Setup-<版本>.exe`，直接拷到 POS 機執行 | **只能在 Windows 建置**（見「安裝包路線」） | 首次裝機，或不經 S3 把某個版本直接裝上機台（已安裝的機台重跑＝就地升級） |
+
+- 使用者的話已經指明路線（例如「發佈到 S3」「出安裝包」「Setup.exe」）就直接採用，不再問；只說「發版」「上線」這類沒指明的才問。
+- 選 S3 → 照下面「S3 路線」一路到「常見狀況與處置」；選安裝包 → 跳到「安裝包路線」。兩條路互不相依：安裝包不會動線上 `manifest.json`，S3 發佈也不會產生安裝包。
+
+## S3 路線
+
+先建立三個觀念，後面的每一道把關都從這裡來：
 
 - **發佈 = 把更新包 zip 與 `manifest.json` 傳到 S3**，門市機約每小時自己來拉一次 manifest，符合條件才下載，店員按「要更新」才會替換。
 - **S3 上只有一份 `manifest.json`（最新版指標）**，每次發佈都會覆寫它。「只限某間門市」只是 manifest 裡的一條規則，不是另一個 bucket；覆寫後所有門市下一輪檢查都看得到它。
@@ -163,8 +179,51 @@ python3 -c 'import json;d=json.load(open("dist/release/<版本>/manifest.before-
 | 發佈後發現不該發，且尚無機台更新 | | 照 [6] 用 `manifest.before-publish.json` 還原指標 |
 | 機台已更新後要退版 | manifest 版本 ≤ 機台現版就不更新 | 不能重發舊版號，也不能重發壞版本；要以更高版號打包舊程式碼，再用 `force-release.sh` |
 
+## 安裝包路線（Windows Setup.exe）
+
+產出 `POSAgentDotNet-Setup-<版本>.exe`，內含 .NET 10 兩包執行期（約 90–100 MB），拷到 POS 機以系統管理員執行。**不經 S3、不碰線上 `manifest.json`**，所以沒有 S3 路線的 GATE；但裝到哪一台機器由使用者決定，我無法遠端代裝。完整的建置機需求與常見錯誤見專案的 `installer/README.md`，本節只寫流程與把關。
+
+### [I-0] 先確認這台機器能不能建置
+
+Claude 所在的機器不是 Windows（`uname -s` 回 `Darwin`／`Linux`）→ **這台出不了安裝包，直接告訴使用者，不要嘗試**：
+
+- `ISCC.exe`（Inno Setup 編譯器）只有 Windows 版；`installer/build-installer.ps1` 是 Windows PowerShell 腳本，探測的是 `C:\Program Files\Inno Setup 7\`。專案 `installer/README.md` 明載：macOS 無法編譯安裝包，也無法驗證任何一條驗收條件。
+- 網路上有用 Wine 或 Docker（如 `amake/innosetup`）在 Mac 編 Inno Setup 的做法，但 Inno Setup 作者表示 Wine 從未被官方支援；Inno Setup 7、Apple Silicon 與這份 `.iss` 的組合我們也沒驗證過（本專案只在 Windows ＋ Inno Setup 7 上驗證）。**不要自行走這條路湊出安裝包交給門市**；使用者明確要求試，也要先講清楚是未驗證的實驗，產出不得直接裝上門市機。
+- 請使用者改到 Windows 建置機。我能先在這台備妥：要建置的 commit SHA、版號、給 Windows 機器照著跑的指令（見 [I-1]），並提醒 commit 要先讓 Windows 建置機取得（我不自行 push）。
+
+Windows 建置機需求：Inno Setup ≥ 7.0.0、.NET SDK 10 (x64)。若裝了 WithSecure Elements，`dotnet` 可能被 Application Control 擋下，見 `installer/README.md`。
+
+### [I-1] 建置（Windows 的 PowerShell，不是 cmd）
+
+```powershell
+cd <repo>\OldEnglish\POSAgentDotNet\installer
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass   # 只影響這個視窗
+.\build-installer.ps1 -Version <版本>
+```
+
+- 版號三段 `x.y.z`。打包的是**當下的工作樹**，先確認 `git status` 乾淨並記下 `git rev-parse --short HEAD`；從功能分支建置也可以。
+- 機台之後仍會檢查線上 manifest，規則同 S3 路線：「manifest 版本 ≤ 機台現版」就不會更新。裝上去的版號要不要高於線上版本，取決於使用者希望這台機器之後是否被線上版本取代；不確定就先問。
+- 產出 `installer\dist\POSAgentDotNet-Setup-<版本>.exe`。建置腳本會擋下 Service.exe 誤為 self-contained、出廠 `appsettings.json` 的 S3 金鑰為空這兩種情況。
+- Setup.exe 內含 S3 唯讀金鑰，建議只用內部管道傳遞，不要放到公開連結。
+
+### [I-2] 交給使用者安裝時要口頭交代
+
+這些在精靈之外，或精靈一開始就會碰到，使用者事先不知道會誤判：
+
+1. **SmartScreen**：安裝包沒有簽章，雙擊會跳「Windows 已保護您的電腦」，點「其他資訊 → 仍要執行」。
+2. 以**系統管理員**執行。
+3. 精靈第一頁列出三件要人工完成的事：關閉舊版小綠點、從工作列取消釘選、刪除舊版 `.bat` 開機自啟檔。
+4. 門市代號必填；四個裝置可以一個都不勾；印表機、新光、玉山的 COM port 不能重複。
+5. 已安裝的機台重跑會進「修改設定」模式並就地升級：先停服務、關 Tray，再覆蓋檔案。避開營業中的交易時段。
+6. 門市機若裝了 WithSecure Elements，要先請 IT 在 Application Control 政策放行 `C:\OMO\POSAgentDotNet\`，否則服務起不來，而且沒有徵兆。
+
+### [I-3] REPORT
+
+回報：Setup.exe 路徑與大小（建議附 `Get-FileHash` 的 SHA-256）、版號、commit SHA、在哪一台建置機建的。**沒有在門市機上驗證過的就明講**；使用者回報「已裝好」才視為依回報達成，並註明未能親自驗證。
+
 ## 參考
 
+- 安裝包路線：專案內 `installer/README.md`；wiki 查 `oldenglish/posagentdotnet-windows-installer`、`posagentdotnet-installer-pitfalls`
 - `references/environment-setup.md`：.NET SDK、AWS CLI v2、`aws login` 與各種環境雷
 - `references/rollout-mechanics.md`：manifest 結構、灰度判定、更新狀態機、換回時機的原始碼依據
 - 設計背景：用 `petpetgo-llm-wiki` 查 `oldenglish/posagentdotnet-ops-deployment`、`posagentdotnet-online-update-design`、`posagentdotnet-update-runtime`。其中以 `aws-mfa.cs` 取得憑證的做法，在沒有長期金鑰的機器上不適用，以本 skill 為準。
